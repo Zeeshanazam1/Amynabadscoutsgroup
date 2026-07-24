@@ -1,0 +1,305 @@
+<REDACTED>
+
+
+  useEffect(() => {
+    const onDocumentMouseDown = (e) => {
+      if (!isProficiencyOpen) return;
+      const target = e.target;
+      if (proficiencyRef.current && !proficiencyRef.current.contains(target)) {
+        setIsProficiencyOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', onDocumentMouseDown);
+    return () => {
+      document.removeEventListener('mousedown', onDocumentMouseDown);
+    };
+  }, [isProficiencyOpen]);
+
+  useEffect(() => {
+    const handleStorage = (event) => {
+      if (event.key === 'scouts_data') {
+        setBadges(getBadges());
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  useEffect(() => {
+    if (userCategory && userCategory !== 'leader') {
+      const section = normalizeCategory(userCategory);
+      if (section) setActiveSection(section);
+    }
+  }, [userCategory]);
+
+  useEffect(() => {
+    const handleSession = () => {
+      try {
+        const session = JSON.parse(sessionStorage.getItem(SESSION_KEY));
+        setUserCategory(session?.category?.toLowerCase() || null);
+      } catch {
+        setUserCategory(null);
+      }
+    };
+
+    handleSession();
+    window.addEventListener('storage', handleSession);
+    return () => window.removeEventListener('storage', handleSession);
+  }, []);
+
+  const visibleSections = userCategory && userCategory !== 'leader'
+    ? [normalizeCategory(userCategory)]
+    : sections;
+
+  const filteredBadges = useMemo(() => {
+    return badges.filter((badge) => {
+      const normalizedBadgeType = badge.badgeType || 'Proficiency Badge';
+      const matchesProficiencyCategory =
+        badgeTypeFilter !== 'Proficiency Badge' ||
+        proficiencyCategory === 'All' ||
+        badge.category.toLowerCase() === proficiencyCategory.toLowerCase();
+      const matchesSearch =
+        badge.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        badge.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (badge.requirements || []).some((req) =>
+          req.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+      const matchesSection =
+        userCategory === 'leader'
+          ? badge.section === activeSection
+          : !userCategory
+          ? badge.section === activeSection
+          : badge.section.toLowerCase() === userCategory;
+
+      const matchesBadgeType = normalizedBadgeType === badgeTypeFilter;
+
+      return matchesSearch && matchesSection && matchesBadgeType && matchesProficiencyCategory;
+    });
+  }, [searchTerm, activeSection, badgeTypeFilter, proficiencyCategory, badges, userCategory]);
+
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 pt-8 pb-12">
+      <AdGuard trigger="badges" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        {/* Header */}
+        <div className="mb-12">
+          <h1 className="text-4xl sm:text-5xl font-bold text-slate-800 mb-3">
+            Badge Library
+          </h1>
+          <p className="text-lg text-slate-600">
+            Explore and filter scout proficiency badges by section and category
+          </p>
+        </div>
+
+        {/* Search Bar */}
+        <div className="mb-8 relative">
+          <Search className="absolute left-4 top-3 text-slate-400" size={20} />
+          <input
+            type="text"
+            placeholder="Search by badge name, category, or requirement..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-green-600 bg-white shadow-sm"
+          />
+        </div>
+
+        {/* Filters Row */}
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+          {/* Section Filters (left) */}
+          <div className="flex flex-wrap gap-3">
+            {visibleSections.map((section) => {
+              const isActive = activeSection === section;
+              const color = sectionColor(section);
+              return (
+                <button
+                  key={section}
+                  onClick={() => setActiveSection(section)}
+                  className="px-6 py-2 rounded-full font-semibold transition-all border-2"
+                  style={
+                    isActive
+                      ? { backgroundColor: color, color: '#ffffff', borderColor: color }
+                      : { borderColor: color, color: '#1f2937' }
+                  }
+                >
+                  {section}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap gap-3 justify-end">
+            {/* Rank button */}
+            <button
+              onClick={() => {
+                setBadgeTypeFilter('Rank Badge');
+                setProficiencyCategory('All');
+              }}
+              className={`px-6 py-2 rounded-full font-semibold transition-all ${
+                badgeTypeFilter === 'Rank Badge'
+                  ? 'bg-yellow-600 text-white shadow-lg'
+                  : 'bg-white text-slate-700 border-2 border-slate-300 hover:border-yellow-600 hover:text-yellow-700'
+              }`}
+            >
+              Rank
+            </button>
+
+            {/* Proficiency button + dropdown */}
+            <div className="relative" ref={proficiencyRef}>
+              <button
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={isProficiencyOpen}
+                onClick={() => {
+                  setBadgeTypeFilter('Proficiency Badge');
+                  setIsProficiencyOpen((v) => !v);
+                }}
+                className={`px-6 py-2 rounded-full font-semibold transition-all flex items-center gap-2 ${
+                  badgeTypeFilter === 'Proficiency Badge'
+                    ? 'bg-yellow-600 text-white shadow-lg'
+                    : 'bg-white text-slate-700 border-2 border-slate-300 hover:border-yellow-600 hover:text-yellow-700'
+                }`}
+              >
+                Proficiency
+                <span className="text-xs">▾</span>
+              </button>
+
+              {isProficiencyOpen && (
+                <div
+                  id="proficiency-dropdown"
+                  role="menu"
+                  className="absolute right-0 mt-2 w-52 rounded-lg shadow-lg border border-slate-200 bg-white overflow-hidden z-10 transform transition-all duration-150"
+                >
+                  {proficiencyCategories.map((cat) => {
+                    const isActive =
+                      cat === 'All'
+                        ? proficiencyCategory === 'All'
+                        : proficiencyCategory.toLowerCase() === cat.toLowerCase();
+
+                    return (
+                      <button
+                        key={cat}
+                        role="menuitem"
+                        onClick={() => {
+                          setBadgeTypeFilter('Proficiency Badge');
+                          setProficiencyCategory(cat);
+                          setIsProficiencyOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                          isActive
+                            ? 'bg-yellow-50 text-yellow-900'
+                            : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        {cat === 'All'
+                          ? 'All categories'
+                          : cat[0].toUpperCase() + cat.slice(1)}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+
+
+        {/* Badge Grid */}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredBadges.length > 0 ? (
+            filteredBadges.map((badge) => {
+              const cardColor = sectionColor(badge.section);
+              const buttonColor = userCategory === 'rover' ? '#ef4444' : userCategory === 'shaheen' ? '#f59e0b' : '#15803d';
+              return (
+                <div
+                  key={badge.id}
+                  className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow overflow-hidden group"
+                  style={{ borderLeft: `4px solid ${cardColor}` }}
+                >
+                  <div className="p-6">
+                  {/* Badge Header */}
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="text-xl font-bold text-slate-800 group-hover:text-green-700 transition-colors">
+                      {badge.title}
+                    </h3>
+                    <span
+                      className={`text-xs font-bold px-3 py-1 rounded-full ${
+                        badge.section === 'Shaheen'
+                          ? 'bg-amber-100 text-amber-800'
+                          : badge.section === 'Scout'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-purple-100 text-purple-800'
+                      }`}
+                    >
+                      {badge.section}
+                    </span>
+                  </div>
+
+                  {/* Category */}
+                  <p className="text-sm text-slate-500 mb-4">
+                    📂 {badge.category}
+                  </p>
+
+
+
+
+
+                  {/* Requirements */}
+                  <div>
+                    <h4 className="font-semibold text-slate-700 mb-2 text-sm">
+                      Requirements:
+                    </h4>
+                    <ul className="space-y-1">
+                      {badge.requirements.map((req, idx) => (
+                        <li
+                          key={idx}
+                          className="text-sm text-slate-600 flex items-start"
+                        >
+                          <span className="text-green-600 mr-2">✓</span>
+                          <span>{req}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="bg-gradient-to-r from-green-50 to-slate-50 px-6 py-3 border-t border-slate-200">
+                  <button
+                    onClick={() => (window.location.hash = `#/badge/${badge.id}`)}
+                    className="w-full bg-green-600 text-white py-2 rounded font-semibold hover:bg-green-700 transition-colors"
+                  >
+                    View Details
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-full py-16 text-center">
+              <p className="text-2xl text-slate-500 font-semibold">
+                No badges found
+              </p>
+              <p className="text-slate-400 mt-2">
+                Try adjusting your search or filter criteria
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Results Count */}
+        <div className="mt-8 text-center text-slate-600">
+          <p className="text-lg">
+            Showing <span className="font-bold text-green-700">{filteredBadges.length}</span>{' '}
+            {filteredBadges.length === 1 ? 'badge' : 'badges'}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+

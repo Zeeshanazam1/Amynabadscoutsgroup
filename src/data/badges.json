@@ -1,0 +1,143 @@
+[
+  {
+    "id": "outdoor-skills",
+    "title": "Outdoor Skills",
+    "section": "Shaheen",
+    "category": "Adventure",
+    "requirements": [
+      "Complete a 5km hike with proper preparation",
+      "Demonstrate basic fire safety and management",
+      "Learn to identify 10 local plants and trees",
+      "Practice proper knot tying (at least 5 essential knots)"
+    ],
+    "badgeType": "Rank Badge"
+  },
+
+  {
+    "id": "camping-expert",
+
+    "title": "Camping Expert",
+    "section": "Scout",
+    "category": "Adventure",
+    "requirements": [
+      "Set up and break down a tent independently",
+      "Cook a meal for the unit using camp equipment",
+      "Practice Leave No Trace principles",
+      "Navigate using a map and compass",
+      "Demonstrate basic first aid knowledge"
+    ],
+    "badgeType": "Proficiency Badge"
+  },
+  {
+    "id": "environmental-guardian",
+    "title": "Environmental Guardian",
+    "section": "Scout",
+    "category": "Conservation",
+    "requirements": [
+      "Complete an environmental survey of local area",
+      "Participate in a conservation project",
+      "Learn about local wildlife and habitats",
+      "Create an action plan for reducing personal carbon footprint"
+    ],
+    "badgeType": "Proficiency Badge"
+  },
+  {
+    "id": "leadership-pioneer",
+    "title": "Leadership Pioneer",
+    "section": "Rover",
+    "category": "Leadership",
+    "requirements": [
+      "Lead a team project from planning to completion",
+      "Mentor younger scouts for at least 3 months",
+      "Develop and deliver a training session",
+      "Demonstrate conflict resolution skills",
+      "Create a leadership development plan"
+    ],
+    "badgeType": "Proficiency Badge"
+  },
+  {
+    "id": "community-builder",
+    "title": "Community Builder",
+    "section": "Rover",
+    "category": "Service",
+    "requirements": [
+      "Organize and execute a community service project",
+      "Volunteer at least 20 hours in community",
+      "Build relationships with local organizations",
+      "Document impact of community work",
+      "Present findings to the unit"
+    ],
+    "badgeType": "Proficiency Badge"
+  },
+  {
+    "id": "water-safety",
+    "title": "Water Safety",
+    "section": "Shaheen",
+    "category": "Safety",
+    "requirements": [
+      "Learn basic swimming strokes",
+      "Practice water safety rules and procedures",
+      "Demonstrate rescue techniques",
+      "Understand water environment hazards",
+      "Complete water safety quiz"
+    ],
+    "badgeType": "Proficiency Badge"
+  },
+  {
+    "id": "orienteering-master",
+    "title": "Orienteering Master",
+    "section": "Scout",
+    "category": "Adventure",
+    "requirements": [
+      "Complete an orienteering course successfully",
+      "Read and interpret topographic maps",
+      "Navigate using compass bearings",
+      "Participate in an orienteering competition",
+      "Plan and lead a navigation trail"
+    ],
+    "badgeType": "Proficiency Badge"
+  },
+  {
+    "id": "survival-skills",
+    "title": "Survival Skills",
+    "section": "Rover",
+    "category": "Adventure",
+    "requirements": [
+      "Build emergency shelter",
+      "Demonstrate water purification methods",
+      "Identify edible and medicinal plants",
+      "Practice emergency signaling",
+      "Complete 24-hour wilderness challenge"
+    ],
+    "badgeType": "Proficiency Badge"
+  },
+  {
+    "id": "tech-innovator",
+    "title": "Tech Innovator",
+    "section": "Scout",
+    "category": "Innovation",
+    "requirements": [
+      "Learn basic coding or app development",
+      "Create a tech solution to solve a problem",
+      "Document your innovation process",
+      "Present tech project to unit members",
+      "Help teach technology skills to others"
+    ],
+    "badgeType": "Proficiency Badge"
+  },
+  {
+    "id": "cultural-ambassador",
+    "title": "Cultural Ambassador",
+    "section": "Shaheen",
+    "category": "Culture",
+    "requirements": [
+      "Learn about 3 different cultures",
+      "Participate in cultural exchange activity",
+      "Cook a traditional dish from another culture",
+      "Share cultural learnings with unit",
+      "Promote intercultural understanding"
+    ],
+    "badgeType": "Proficiency Badge"
+  }
+]
+

@@ -1,0 +1,142 @@
+.rope-box {
+  position: relative;
+  border-radius: var(--border-radius);
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.65) inset,
+    0 10px 30px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+}
+
+/* Rope pattern (subtle but visible): simulated twisted jute strips */
+.rope-box::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      130deg,
+      rgba(107, 79, 29, 0.18) 0 7px,
+      rgba(255, 255, 255, 0) 7px 16px
+    ),
+    repeating-linear-gradient(
+      55deg,
+      rgba(0, 0, 0, 0.05) 0 4px,
+      rgba(255, 255, 255, 0) 4px 10px
+    );
+  opacity: 0.28;
+  mix-blend-mode: multiply;
+}
+
+.rope-box__body {
+  position: relative;
+  padding: 18px 18px;
+}
+
+.rope-box__header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 16px 0;
+}
+
+.rope-box__title {
+  position: relative;
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: var(--color-header);
+}
+
+/* Corner ornaments */
+.rope-box__corner {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.rope-box__corner.rope {
+  width: 52px;
+  height: 52px;
+  opacity: 0.82;
+}
+
+.rope-box__corner.rope--tl {
+  top: -10px;
+  left: -10px;
+}
+.rope-box__corner.rope--tr {
+  top: -10px;
+  right: -10px;
+  transform: scaleX(-1);
+}
+.rope-box__corner.rope--bl {
+  bottom: -10px;
+  left: -10px;
+  transform: scaleY(-1);
+}
+.rope-box__corner.rope--br {
+  bottom: -10px;
+  right: -10px;
+  transform: scale(-1, -1);
+}
+
+/* Rope-like knot + short strands */
+.rope-box__corner.rope {
+  background-image:
+    radial-gradient(circle at 40% 45%, rgba(0, 0, 0, 0.18) 0 22%, rgba(0, 0, 0, 0) 23%),
+    repeating-linear-gradient(
+      45deg,
+      rgba(107, 79, 29, 0.55) 0 6px,
+      rgba(0, 0, 0, 0) 6px 10px
+    ),
+    linear-gradient(
+      135deg,
+      rgba(75, 47, 18, 0.6) 0 35%,
+      rgba(0, 0, 0, 0) 36%
+    );
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.08));
+}
+
+/* Header knot pieces (small, centered) */
+.rope-box__header .rope-box__corner {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  opacity: 0.85;
+  background-image:
+    radial-gradient(circle at 50% 50%, rgba(0,0,0,0.18) 0 18%, rgba(0,0,0,0) 19%),
+    repeating-linear-gradient(
+      60deg,
+      rgba(107, 79, 29, 0.6) 0 3px,
+      rgba(0,0,0,0) 3px 6px
+    );
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.08));
+}
+
+/* Variants */
+.rope-box--info {
+  border-color: rgba(107, 79, 29, 0.24);
+}
+
+.rope-box--accent {
+  border-color: rgba(251, 191, 36, 0.28);
+}
+
+.rope-box--neutral {
+  border-color: rgba(15, 23, 42, 0.14);
+}
+
+@media (max-width: 640px) {
+  .rope-box__body {
+    padding: 16px 14px;
+  }
+}
+

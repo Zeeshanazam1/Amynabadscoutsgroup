@@ -1,0 +1,56 @@
+[
+  {
+    "id": "camping-2026-07",
+    "title": "Summer Camping Adventure",
+    "date": "2026-07-15T08:00:00Z",
+    "location": "Mountain Ridge Camp Site",
+    "description": "A 3-day camping expedition for all scout sections. Learn wilderness skills and bond with your unit.",
+    "category": "Adventure",
+    "attendees": "All Sections"
+  },
+  {
+    "id": "badge-test-2026-06-20",
+    "title": "Badge Testing Week",
+    "date": "2026-06-20T10:00:00Z",
+    "location": "Scout Hall",
+    "description": "Official badge testing for scouts who have completed their requirements.",
+    "category": "Testing",
+    "attendees": "Interested Scouts"
+  },
+  {
+    "id": "training-2026-07-02",
+    "title": "Leadership Training Workshop",
+    "date": "2026-07-02T14:00:00Z",
+    "location": "Scout Hall",
+    "description": "Advanced training for aspiring unit leaders and rover scouts.",
+    "category": "Training",
+    "attendees": "Rover & Senior Scouts"
+  },
+  {
+    "id": "community-service-2026-06-25",
+    "title": "Community Clean-up Drive",
+    "date": "2026-06-25T09:00:00Z",
+    "location": "Local Park",
+    "description": "Join us for environmental conservation and community service.",
+    "category": "Service",
+    "attendees": "All Scouts"
+  },
+  {
+    "id": "orientation-2026-08-05",
+    "title": "Orienteering Competition",
+    "date": "2026-08-05T07:00:00Z",
+    "location": "Forest Valley",
+    "description": "Test your navigation and map-reading skills in a competitive setting.",
+    "category": "Competition",
+    "attendees": "All Sections"
+  },
+  {
+    "id": "water-sports-2026-07-22",
+    "title": "Water Sports Day",
+    "date": "2026-07-22T10:00:00Z",
+    "location": "City Lake",
+    "description": "Swimming, kayaking, and water safety certification opportunities.",
+    "category": "Adventure",
+    "attendees": "All Scouts"
+  }
+]
