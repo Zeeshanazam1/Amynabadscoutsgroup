@@ -118,6 +118,8 @@ export default function Navbar() {
     { label: 'Get In Touch', href: '#/contact', isGetInTouch: true, icon: Send },
   ];
 
+  const logoSrc = `${import.meta.env.BASE_URL}logo.png`;
+
   const isActiveLink = (href) => {
     if (href === '#/') return activeHash === '#/' || activeHash === '#/home' || activeHash === '';
     return activeHash.startsWith(href);
@@ -133,7 +135,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           <a href="#/" className="relative flex items-center space-x-3 group">
-            <img src="/logo.png" alt="Amynabad Scouts logo" className="scout-brand-badge w-10 h-10 rounded-full object-cover" />
+            <img src={logoSrc} alt="Amynabad Scouts logo" className="scout-brand-badge w-10 h-10 rounded-full object-cover" />
             <span className="text-xl font-bold text-white hidden sm:inline">Amynabad Scouts</span>
           </a>
 

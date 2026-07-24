@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import Navbar from './components/Navbar';
 import HomePage from './components/HomePage';
 import BadgeLibrary from './components/BadgeLibrary';
@@ -15,6 +16,7 @@ import ShopPage from './components/ShopPage';
 import EventGalleryPage from './components/EventGalleryPage';
 import EventGalleryLoginPage from './components/EventGalleryLoginPage';
 import { isAuthenticated } from './utils/authManager';
+import { firebaseApp } from './utils/firebaseConfig';
 import { initializeData, getWebsiteInfo } from './utils/dataManager';
 import { getTheme, applyTheme, getThemeForPage } from './utils/themeManager';
 
@@ -59,6 +61,33 @@ function App() {
     handleHashChange();
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  useEffect(() => {
+    const auth = getAuth(firebaseApp);
+    const unsub = onAuthStateChanged(auth, (fbUser) => {
+      const currentHash = window.location.hash || '#/';
+      const isAuthRoute = currentHash === '#/auth' || currentHash === '#/login' || currentHash === '#/signup';
+
+      if (fbUser && isAuthRoute) {
+        // Check if session already exists in sessionStorage (saved by Auth.jsx)
+        // This prevents redirect before profile/session is saved
+        try {
+          const session = JSON.parse(sessionStorage.getItem('scouts_user_session') || 'null');
+          if (session && session.id) {
+            window.location.hash = '#/';
+          } else {
+            // Session not saved yet — give Auth.jsx a moment to process
+            // The explicit profile creation in Auth.jsx's sign-in handlers
+            // will redirect once complete
+          }
+        } catch {
+          // If session read fails, defer to Auth.jsx's redirect logic
+        }
+      }
+    });
+
+    return () => unsub();
   }, []);
 
   // Apply per-page theme whenever the page changes (public pages only)

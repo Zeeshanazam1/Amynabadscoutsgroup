@@ -3,7 +3,8 @@ import {
   getAuth,
   onAuthStateChanged,
   GoogleAuthProvider,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   sendEmailVerification,
   createUserWithEmailAndPassword,
@@ -13,11 +14,8 @@ import {
 import { firebaseApp } from '../utils/firebaseConfig';
 import { ensureUserProfile, saveUserProfile } from '../utils/profileManager';
 import { setTheme, getThemeByCategory } from '../utils/themeManager';
-import { getWebsiteInfo } from '../utils/dataManager';
 
 const SESSION_KEY = 'scouts_user_session';
-const categories = ['leader', 'shaheen', 'scout', 'rover'];
-
 
 function getSession() {
   try {
@@ -43,74 +41,81 @@ export default function Auth() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [user, setUser] = useState(getSession());
-
-  // UI mode: login or signup
   const [tab, setTab] = useState('login');
 
-  // Email/password login
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
-  // Email/password signup
   const [signupName, setSignupName] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupConfirm, setSignupConfirm] = useState('');
 
+  function applyAuthenticatedUser(fbUser) {
+    if (!fbUser) {
+      setUser(null);
+      clearSession();
+      setLoading(false);
+      return null;
+    }
+    const profile = ensureUserProfile(fbUser);
+    const u = {
+      id: profile.uid,
+      name: profile.name,
+      email: profile.email,
+      avatar: profile.avatar,
+      category: profile.category ?? null,
+      emailVerified: profile.emailVerified,
+    };
+    setUser(u);
+    saveSession(u);
+    if (profile.category) {
+      setTheme(getThemeByCategory(profile.category));
+    }
+    setLoading(false);
+    return u;
+  }
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (fbUser) => {
-      if (!fbUser) {
-        setUser(null);
-        clearSession();
-        setLoading(false);
-        return;
-      }
-
-      const profile = ensureUserProfile(fbUser);
-      const u = {
-        id: profile.uid,
-        name: profile.name,
-        email: profile.email,
-        avatar: profile.avatar,
-        category: profile.category ?? null,
-        emailVerified: profile.emailVerified,
-      };
-
-      setUser(u);
-      saveSession(u);
-      if (profile.category) {
-        setTheme(getThemeByCategory(profile.category));
-      }
-      setLoading(false);
+      applyAuthenticatedUser(fbUser);
     });
-
     return () => unsub();
   }, [auth]);
 
-  async function enforceEmailVerification(fbUser) {
-    // If email verification is enabled in Firebase project, this helps ensure UX.
-    if (fbUser && !fbUser.emailVerified) {
+  useEffect(() => {
+    let active = true;
+    async function handleRedirectResult() {
       try {
-        await sendEmailVerification(fbUser);
-        setMessage('Check your email to verify your account.');
-      } catch (e) {
-        console.error(e);
-        setMessage('Signed in, but could not send verification email.');
+        const result = await getRedirectResult(auth);
+        if (!active) return;
+        if (result?.user) {
+          applyAuthenticatedUser(result.user);
+          setMessage('Signed in successfully');
+        }
+      } catch (err) {
+        console.error('Redirect sign-in failed', err);
+        if (active) {
+          setMessage('Google sign-in could not be completed.');
+          setLoading(false);
+        }
       }
     }
-  }
+    handleRedirectResult();
+    return () => {
+      active = false;
+    };
+  }, [auth]);
 
   async function handleGoogleSignIn() {
     setMessage('');
     setLoading(true);
     try {
-      await signInWithPopup(auth, googleProvider);
-      const fbUser = auth.currentUser;
-      await enforceEmailVerification(fbUser);
+      setMessage('Redirecting to Google...');
+      await signInWithRedirect(auth, googleProvider);
     } catch (err) {
       console.error(err);
-      setMessage('Google sign-in failed');
-    } finally {
+      setMessage('Google sign-in could not be started.');
       setLoading(false);
     }
   }
@@ -120,9 +125,31 @@ export default function Auth() {
     setMessage('');
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
-      const fbUser = auth.currentUser;
-      await enforceEmailVerification(fbUser);
+      const userCredential = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+      const fbUser = userCredential.user;
+      if (!fbUser) {
+        setMessage('Sign-in succeeded but no user object returned.');
+        setLoading(false);
+        return;
+      }
+      const profile = ensureUserProfile(fbUser);
+      const u = {
+        id: profile.uid,
+        name: profile.name,
+        email: profile.email,
+        avatar: profile.avatar,
+        category: profile.category ?? 'scout',
+        emailVerified: profile.emailVerified,
+      };
+      setUser(u);
+      saveSession(u);
+      if (u.category) {
+        setTheme(getThemeByCategory(u.category));
+      }
+      setMessage('Signed in successfully');
+      setTimeout(() => {
+        window.location.hash = '#/';
+      }, 300);
     } catch (err) {
       console.error(err);
       setMessage(err?.message || 'Email sign-in failed');
@@ -134,7 +161,6 @@ export default function Auth() {
   async function handleEmailSignUp(e) {
     e?.preventDefault?.();
     setMessage('');
-
     if (!signupName || !signupEmail || !signupPassword) {
       setMessage('Please fill all fields');
       return;
@@ -143,7 +169,6 @@ export default function Auth() {
       setMessage('Passwords do not match');
       return;
     }
-
     setLoading(true);
     try {
       const cred = await createUserWithEmailAndPassword(auth, signupEmail, signupPassword);
@@ -151,13 +176,27 @@ export default function Auth() {
         await updateProfile(cred.user, { displayName: signupName });
       }
       await sendEmailVerification(cred.user);
-      setMessage('Account created. Check your email to verify your account.');
-
-      // Update session display name after updateProfile
-      const fbUser = auth.currentUser;
+      const fbUser = auth.currentUser || cred.user;
       if (fbUser) {
-        await enforceEmailVerification(fbUser);
+        const profile = ensureUserProfile(fbUser);
+        const u = {
+          id: profile.uid,
+          name: profile.name,
+          email: profile.email,
+          avatar: profile.avatar,
+          category: profile.category ?? 'scout',
+          emailVerified: profile.emailVerified,
+        };
+        setUser(u);
+        saveSession(u);
+        if (u.category) {
+          setTheme(getThemeByCategory(u.category));
+        }
       }
+      setMessage('Account created. Check your email to verify your account.');
+      setTimeout(() => {
+        window.location.hash = '#/';
+      }, 800);
     } catch (err) {
       console.error(err);
       setMessage(err?.message || 'Sign-up failed');
@@ -165,26 +204,6 @@ export default function Auth() {
       setLoading(false);
     }
   }
-
-  function handleChooseCategory(cat) {
-    if (!user) return;
-    const websiteInfo = getWebsiteInfo();
-    const leaderEmails = (websiteInfo?.leaderEmails || []).map(e => e.toLowerCase());
-    if (cat === 'leader' && !leaderEmails.includes((user.email || '').toLowerCase())) {
-      setMessage('You are not authorized to select Leader.');
-      return;
-    }
-    const updated = { ...user, category: cat };
-    setUser(updated);
-    saveSession(updated);
-    saveUserProfile({ uid: user.id, category: cat });
-    setTheme(getThemeByCategory(cat));
-    setMessage(`Category set to ${cat}`);
-    setTimeout(() => {
-      window.location.hash = '#/profile';
-    }, 800);
-  }
-
 
   async function handleSignOut() {
     setMessage('');
@@ -207,20 +226,12 @@ export default function Auth() {
     );
   }
 
-  // Category selection step removed.
-  // Category is now chosen from the profile page.
-  // New users default to scout (handled in profileManager.ensureUserProfile).
-
-
-  // Signed-in summary
   if (user && user.category) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#14532d] via-[#16a34a] to-[#84cc16] flex items-center justify-center p-4">
         <div className="w-full max-w-md bg-emerald-950/90 border border-white/10 rounded-3xl shadow-2xl p-8 text-center text-white">
-          <h2 className="text-2xl font-bold text-white mb-2">You're signed in</h2>
-          <p className="text-emerald-200 mb-4">
-            {user.name} — {user.email}
-          </p>
+          <h2 className="text-2xl font-bold text-white mb-2">You&apos;re signed in</h2>
+          <p className="text-emerald-200 mb-4">{user.name} &mdash; {user.email}</p>
           <p className="text-emerald-200 mb-6">
             Category: <strong className="text-emerald-300">{user.category}</strong>
           </p>
@@ -233,56 +244,57 @@ export default function Auth() {
             >
               Go to home
             </button>
-            <button onClick={handleSignOut} className="py-2 px-4 bg-emerald-500 rounded text-white hover:bg-emerald-600">
+            <button
+              onClick={handleSignOut}
+              className="py-2 px-4 bg-emerald-500 rounded text-white hover:bg-emerald-600"
+            >
               Sign out
             </button>
           </div>
-
           {!user.emailVerified && (
-            <div className="mt-4 text-sm text-emerald-200">Check your email to verify your account.</div>
+            <div className="mt-4 text-sm text-emerald-200">
+              Check your email to verify your account.
+            </div>
           )}
         </div>
       </div>
     );
   }
 
-  // Auth page (login/signup + Google)
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#14532d] via-[#16a34a] to-[#84cc16] flex items-center justify-center p-4">
       <div className="w-full max-w-5xl grid md:grid-cols-2 gap-6">
         <div className="bg-emerald-950/90 border border-white/10 rounded-3xl shadow-2xl p-8 flex flex-col justify-center text-white">
           <div className="text-center">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-emerald-600 rounded-full mb-6 shadow-lg shadow-emerald-500/30 text-4xl">
-              ⚜️
+              &#9876;
             </div>
             <h1 className="text-3xl font-bold">Amynabad Scouts</h1>
             <p className="text-emerald-200 mt-4 text-base leading-7 max-w-xl mx-auto">
-              “Try and leave this world a little better than you found it.”
+              &ldquo;Try and leave this world a little better than you found it.&rdquo;
             </p>
             <p className="text-emerald-300 mt-4 text-sm uppercase tracking-[0.3em] text-opacity-90">
-              — Robert Baden-Powell
+              &mdash; Robert Baden-Powell
             </p>
           </div>
         </div>
-
         <div className="bg-emerald-950/90 border border-white/10 rounded-3xl shadow-2xl p-8 text-white">
           <div className="flex gap-2 mb-6">
             <button
               type="button"
               onClick={() => setTab('login')}
-              className={`flex-1 py-2 rounded ${tab === 'login' ? 'bg-emerald-600 text-white' : 'bg-emerald-900 text-emerald-200'}`}
+              className={'flex-1 py-2 rounded ' + (tab === 'login' ? 'bg-emerald-600 text-white' : 'bg-emerald-900 text-emerald-200')}
             >
               Login
             </button>
             <button
               type="button"
               onClick={() => setTab('signup')}
-              className={`flex-1 py-2 rounded ${tab === 'signup' ? 'bg-emerald-600 text-white' : 'bg-emerald-900 text-emerald-200'}`}
+              className={'flex-1 py-2 rounded ' + (tab === 'signup' ? 'bg-emerald-600 text-white' : 'bg-emerald-900 text-emerald-200')}
             >
               Sign Up
             </button>
           </div>
-
           <button
             type="button"
             onClick={handleGoogleSignIn}
@@ -291,7 +303,6 @@ export default function Auth() {
           >
             Sign in with Google
           </button>
-
           {tab === 'login' ? (
             <form onSubmit={handleEmailSignIn} className="space-y-4">
               <div>
@@ -395,11 +406,9 @@ export default function Auth() {
               </div>
             </form>
           )}
-
           {message && <div className="mt-4 text-sm text-emerald-200">{message}</div>}
         </div>
       </div>
     </div>
   );
 }
-
