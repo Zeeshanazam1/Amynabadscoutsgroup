@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, Send } from 'lucide-react';
 import { setTheme } from '../utils/themeManager';
-
-
+import { addDocument } from '../utils/firestoreClient';
 
 const fieldClass =
   'w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] bg-white';
-
 
 const JOINING_KEY = 'scouts_joining_requests';
 
@@ -91,11 +89,8 @@ export default function JoiningFormPage() {
       return;
     }
 
-
-    const items = readAll();
     const categoryToSave = selectedCategory || section;
-    items.unshift({
-      id: `join-${Date.now()}`,
+    const newReq = {
       name: name.trim(),
       email: email.trim(),
       phone: phone.trim(),
@@ -103,9 +98,15 @@ export default function JoiningFormPage() {
       message: message.trim(),
       createdAt: new Date().toISOString(),
       status: 'Pending',
-    });
+    };
 
+    const items = readAll();
+    items.unshift({ id: `join-${Date.now()}`, ...newReq });
     writeAll(items);
+
+    try {
+      addDocument('joiningRequests', newReq);
+    } catch {}
 
     setSubmitted(true);
     setName('');

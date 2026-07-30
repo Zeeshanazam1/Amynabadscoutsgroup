@@ -42,28 +42,28 @@ const normalizeProfileType = (category) => {
   return 'scout_rover';
 };
 
-export const ensureUserProfile = (fbUser) => {
+export const ensureUserProfile = (fbUser, overrides = {}) => {
   if (!fbUser || !fbUser.uid) return null;
 
   const existing = getUserProfile(fbUser.uid);
-  const existingCategory = existing?.category ?? null;
-
-  // Default requirement: if user is new (no chosen category), default to scout.
-  // (Use lower-case internal category values.)
-  const category = existingCategory ?? 'scout';
+  const existingCategory = overrides.category ?? existing?.category ?? 'scout';
+  const defaultUsername = (fbUser.email || 'scout').split('@')[0].replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
 
   const newProfile = {
     ...existing,
     uid: fbUser.uid,
-    name: fbUser.displayName || fbUser.email || 'User',
-    email: fbUser.email || '',
-    avatar: fbUser.photoURL || null,
+    username: overrides.username || existing?.username || defaultUsername,
+    name: overrides.name || existing?.name || fbUser.displayName || fbUser.email || 'User',
+    age: overrides.age || existing?.age || '',
+    email: fbUser.email || overrides.email || '',
+    avatar: fbUser.photoURL || existing?.avatar || null,
     emailVerified: !!fbUser.emailVerified,
-    category,
-    profileType: existing?.profileType ?? normalizeProfileType(category) ?? 'scout_rover',
-    chatAccess: existing?.chatAccess || false,
+    category: existingCategory,
+    profileType: existing?.profileType ?? normalizeProfileType(existingCategory) ?? 'scout_rover',
+    chatAccess: existing?.chatAccess ?? overrides.chatAccess ?? false,
     createdAt: existing?.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    ...overrides,
   };
 
   return saveUserProfile(newProfile);

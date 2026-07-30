@@ -1,30 +1,41 @@
 import { useEffect, useMemo, useState } from 'react';
-
-
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { firebaseApp } from '../utils/firebaseConfig';
 import { ensureUserProfile, getUserProfile, saveUserProfile } from '../utils/profileManager';
 import { getWebsiteInfo } from '../utils/dataManager';
 import { setTheme, getThemeByCategory } from '../utils/themeManager';
 
-const PROFILE_CATEGORIES = ['shaheen', 'scout', 'rover'];
-
+const CATEGORY_OPTIONS = [
+  { value: 'shaheen', label: 'Shaheen Scout' },
+  { value: 'scout', label: 'Boy Scout' },
+  { value: 'rover', label: 'Rover Scout' },
+  { value: 'leader', label: 'Leader Scout' },
+];
 
 export default function UserProfilePage() {
   const auth = useMemo(() => getAuth(firebaseApp), []);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState(null);
+  const [saveMessage, setSaveMessage] = useState('');
+  const [username, setUsername] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [age, setAge] = useState('');
+  const [bio, setBio] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('scout');
+  const [avatarDataUrl, setAvatarDataUrl] = useState('');
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (fbUser) => {
-      if (!fbUser) {
-        setProfile(null);
-        setLoading(false);
-        return;
-      }
-
-      const persisted = getUserProfile(fbUser.uid) || ensureUserProfile(fbUser);
-      setProfile(persisted);
+      if (!fbUser) { setProfile(null); setLoading(false); return; }
+      const p = getUserProfile(fbUser.uid) || ensureUserProfile(fbUser);
+      setProfile(p);
+      setUsername(p.username || '');
+      setDisplayName(p.name || '');
+      setAge(p.age || '');
+      setBio(p.bio || '');
+      setSelectedCategory(p.category || 'scout');
+      setAvatarDataUrl(p.avatar || '');
       setLoading(false);
     });
     return () => unsub();
@@ -41,293 +52,179 @@ export default function UserProfilePage() {
   }, [loading, profile]);
 
   const websiteInfo = useMemo(() => getWebsiteInfo(), []);
-  const leaderEmails = useMemo(
-    () => (websiteInfo?.leaderEmails || []).map((e) => String(e).toLowerCase().trim()).filter(Boolean),
-    [websiteInfo]
-  );
+  const leaderEmails = useMemo(() => (websiteInfo?.leaderEmails || []).map(e => String(e).toLowerCase().trim()).filter(Boolean), [websiteInfo]);
 
-  // Ensure profile defaults:
-  // - if new user: default category is scout (set in ensureUserProfile)
-  // - if leader email: mark as leader
   useEffect(() => {
     if (!profile?.email) return;
-
     const email = String(profile.email).toLowerCase().trim();
-    const emailMatchesLeader = leaderEmails.includes(email);
-
-    if (emailMatchesLeader && profile.category?.toLowerCase() !== 'leader') {
-      const updated = {
-        ...profile,
-        category: 'leader',
-        profileType: 'leader',
-      };
-      setProfile(updated);
-      saveUserProfile(updated);
-
-      try {
-        const session = JSON.parse(sessionStorage.getItem('scouts_user_session')) || {};
-        sessionStorage.setItem(
-          'scouts_user_session',
-          JSON.stringify({ ...session, category: 'leader', profileType: 'leader' })
-        );
-      } catch {}
-
-      try {
-        setTheme(getThemeByCategory('leader'));
-      } catch {}
+    if (leaderEmails.includes(email) && selectedCategory !== 'leader') {
+      setSelectedCategory('leader');
+      setProfile(prev => ({ ...prev, category: 'leader', profileType: 'leader' }));
+      saveUserProfile({ ...profile, category: 'leader', profileType: 'leader' });
+      try { const s = JSON.parse(sessionStorage.getItem('scouts_user_session')) || {}; sessionStorage.setItem('scouts_user_session', JSON.stringify({ ...s, category: 'leader' })); } catch {}
+      setTheme(getThemeByCategory('leader'));
     }
   }, [profile, leaderEmails]);
+
+  const canSelectLeader = leaderEmails.includes(profile?.email?.toLowerCase()?.trim() || '');
+
+  const handleAvatarChange = (event) => {
+    setUploadError('');
+    setSaveMessage('');
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { setUploadError('Only image files allowed.'); return; }
+    if (file.size > 2 * 1024 * 1024) { setUploadError('Image must be 2MB or smaller.'); return; }
+    const reader = new FileReader();
+    reader.onload = () => setAvatarDataUrl(reader.result);
+    reader.onerror = () => setUploadError('Failed to load image.');
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveProfile = () => {
+    setSaving(true);
+    setSaveMessage('');
+    const updated = {
+      ...profile,
+      uid: profile.uid,
+      username: username.trim().toLowerCase().replace(/[^a-z0-9_]/g, ''),
+      name: displayName.trim() || profile.email || 'User',
+      age: age ? String(age).trim() : '',
+      email: profile.email,
+      bio: bio.trim(),
+      category: selectedCategory,
+      profileType: selectedCategory === 'leader' ? 'leader' : 'scout_rover',
+      avatar: avatarDataUrl || profile.avatar || null,
+      updatedAt: new Date().toISOString()
+    };
+    saveUserProfile(updated);
+    setProfile(updated);
+    try { const s = JSON.parse(sessionStorage.getItem('scouts_user_session')) || {}; sessionStorage.setItem('scouts_user_session', JSON.stringify({ id: updated.uid, name: updated.name, email: updated.email, avatar: updated.avatar, category: updated.category })); } catch {}
+    try { setTheme(getThemeByCategory(selectedCategory)); } catch {}
+    setSaving(false);
+    setSaveMessage('Profile saved successfully!');
+    setTimeout(() => setSaveMessage(''), 3000);
+  };
 
   if (loading || redirecting) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4">
-        <div className="text-slate-200">
-          {redirecting ? 'Redirecting to login...' : 'Loading...'}
-        </div>
+        <div className="text-slate-200">{redirecting ? 'Redirecting to login...' : 'Loading...'}</div>
       </div>
     );
   }
 
-  const displayProfile = {
-
-
-    name: profile.name || profile.email || 'User',
-    email: profile.email,
-    avatarUrl: profile.avatar,
-    category: profile.category || 'Not set',
-    // Placeholder fields for later extension
-    dob: profile.dob || '',
-    nationality: profile.nationality || '',
-    currentPatrol: profile.currentPatrol || '',
-    leadershipRole: profile.leadershipRole || '',
-    patrolLeader: profile.patrolLeader || false,
-  };
-
-
-  // Keep these computed values stable.
-  const normalizedProfileEmail = profile?.email ? String(profile.email).toLowerCase().trim() : '';
-  const canSelectLeader = leaderEmails.includes(normalizedProfileEmail);
-
-  const profileCategory = profile?.category ? String(profile.category).toLowerCase().trim() : 'scout';
-
-  // user can only ever have one of the two profile types.
-  const profileType = profile?.profileType || (profileCategory === 'leader' ? 'leader' : 'scout_rover');
-
-  const categories = profileType === 'leader' ? ['leader'] : PROFILE_CATEGORIES;
-
-
-  const handleCategoryChange = (e) => {
-    const newCat = (e.target.value || '').toLowerCase();
-
-    // type enforcement
-    const nextProfileType = newCat === 'leader' ? 'leader' : 'scout_rover';
-
-    const updated = {
-      ...profile,
-      category: newCat,
-      profileType: nextProfileType,
-    };
-
-    setProfile(updated);
-    saveUserProfile(updated);
-
-    try {
-      const session = JSON.parse(sessionStorage.getItem('scouts_user_session')) || {};
-      sessionStorage.setItem(
-        'scouts_user_session',
-        JSON.stringify({ ...session, category: newCat, profileType: nextProfileType })
-      );
-    } catch {}
-
-    try {
-      setTheme(getThemeByCategory(newCat));
-    } catch {}
-  };
-
-
-  const handleLeadershipRoleChange = (newRole) => {
-    const updated = { ...profile, leadershipRole: newRole };
-    setProfile(updated);
-    saveUserProfile(updated);
-  };
-
-  const handleAvatarChange = (event) => {
-    setUploadError('');
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setUploadError('Only image files are allowed for profile photos.');
-      return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      setUploadError('Profile image must be 2MB or smaller.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const updated = { ...profile, avatar: reader.result };
-      setProfile(updated);
-      saveUserProfile(updated);
-    };
-    reader.onerror = () => {
-      setUploadError('Failed to load the selected image. Please try another file.');
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleDocumentUpload = (event) => {
-    setUploadError('');
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 2 * 1024 * 1024) {
-      setUploadError('Document must be 2MB or smaller.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const updated = { ...profile, document: {
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        dataUrl: reader.result,
-        uploadedAt: new Date().toISOString(),
-      } };
-      setProfile(updated);
-      saveUserProfile(updated);
-    };
-    reader.onerror = () => {
-      setUploadError('Failed to read the uploaded document. Please try again.');
-    };
-    reader.readAsDataURL(file);
-  };
-
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-3xl mx-auto px-4 py-10">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Your Profile</h1>
-        <p className="text-slate-600 mb-8">Complete your basic scout details below.</p>
-
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-16 h-16 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center">
-              {profile.avatarUrl ? (
-                <img src={profile.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-slate-500 font-semibold">{profile.name?.charAt(0)?.toUpperCase()}</span>
-              )}
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">User Profile</h1>
+        <p className="text-slate-600 mb-8">Manage your profile details, category, and theme preferences.</p>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8">
+          <div className="flex flex-col sm:flex-row items-center gap-6 mb-8 pb-8 border-b border-slate-200">
+            <div className="relative">
+              <div className="w-24 h-24 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center ring-4 ring-white shadow-md">
+                {avatarDataUrl ? (<img src={avatarDataUrl} alt="avatar" className="w-full h-full object-cover" />) : (
+                  <span className="text-3xl text-slate-500 font-bold">{(displayName || profile?.email || 'U').charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <label className="absolute -bottom-1 -right-1 w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-emerald-700 transition-colors shadow-md">
+                <span className="text-white text-sm leading-none">+</span>
+                <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+              </label>
             </div>
-            <div>
-              <div className="font-semibold text-slate-900">{profile.name}</div>
-              <div className="text-sm text-slate-600">{profile.email}</div>
+            <div className="text-center sm:text-left">
+              <h2 className="text-xl font-semibold text-slate-900">{displayName || 'Your Name'}</h2>
+              {username && <p className="text-sm text-emerald-700 font-medium">@{username}</p>}
+              {profile?.email && <p className="text-sm text-slate-500">{profile.email}</p>}
+              <p className="text-xs text-slate-400 mt-1">Click + to change your profile photo</p>
+              {uploadError && <p className="text-xs text-red-500 mt-1">{uploadError}</p>}
             </div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
-              <select
-                value={profile.category || ''}
-                onChange={handleCategoryChange}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
-              >
-                <option value="">Select category</option>
-                {categories.map((c) => (
-                  <option key={c} value={c.toLowerCase()} disabled={c.toLowerCase() === 'leader' && !canSelectLeader}>{c}</option>
-                ))}
-              </select>
-              <p className="text-xs text-slate-500 mt-1">Change your scout category; this updates your view and theme.</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Profile photo</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                className="block w-full text-sm text-slate-600"
-              />
-              <p className="text-xs text-slate-500 mt-1">Upload a profile photo up to 2MB.</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Upload document</label>
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                onChange={handleDocumentUpload}
-                className="block w-full text-sm text-slate-600"
-              />
-              <p className="text-xs text-slate-500 mt-1">Upload a document up to 2MB.</p>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Uploaded document</label>
-              {profile.document ? (
-                <div className="rounded-lg border border-slate-200 p-3 bg-slate-50">
-                  <div className="font-semibold text-slate-900">{profile.document.name}</div>
-                  <div className="text-xs text-slate-500">{(profile.document.size / 1024).toFixed(1)} KB • {profile.document.type}</div>
-                </div>
-              ) : (
-                <div className="rounded-lg border border-dashed border-slate-300 p-3 text-slate-500 bg-slate-50">
-                  No document uploaded yet.
-                </div>
-              )}
-            </div>
-
-            {profile.category?.toLowerCase() === 'leader' ? (
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Leadership role</label>
-                <select
-                  value={displayProfile.leadershipRole}
-                  onChange={(e) => handleLeadershipRoleChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
-                >
-                  <option value="">Select role</option>
-                  <option value="Trainer">Trainer</option>
-                  <option value="ASL">ASL</option>
-                  <option value="SL">SL</option>
-                  <option value="GSL">GSL</option>
-                </select>
-                <p className="text-xs text-slate-500 mt-2">Leadership role will be stored in your user profile doc.</p>
-              </div>
-            ) : (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Current Patrol</label>
-                <input type="text" placeholder="Patrol name" className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white" disabled />
+                <label className="block text-sm font-medium text-slate-700 mb-1">Username</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-slate-400">@</span>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                    className="w-full pl-8 pr-4 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    placeholder="username"
+                  />
+                </div>
               </div>
-            )}
-          </div>
-
-          {uploadError && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-              {uploadError}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={e => setDisplayName(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  placeholder="Your full name"
+                />
+              </div>
             </div>
-          )}
-          <div className="mt-8 flex gap-3">
-            <button
-              type="button"
-              disabled
-              className="px-5 py-2 rounded-lg bg-green-600 text-white font-semibold opacity-50 cursor-not-allowed"
-            >
-              Save profile (coming soon)
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                window.location.hash = '#/';
-              }}
-              className="px-5 py-2 rounded-lg bg-slate-200 text-slate-900 font-semibold"
-            >
-              Back to home
-            </button>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Age</label>
+                <input
+                  type="number"
+                  min="5"
+                  max="100"
+                  value={age}
+                  onChange={e => setAge(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  placeholder="Your age"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Scout Category</label>
+                <select
+                  value={selectedCategory}
+                  onChange={e => {
+                    const cat = e.target.value;
+                    setSelectedCategory(cat);
+                    try { setTheme(getThemeByCategory(cat)); } catch {}
+                  }}
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none font-medium"
+                >
+                  {CATEGORY_OPTIONS.map(c => (
+                    <option key={c.value} value={c.value} disabled={c.value === 'leader' && !canSelectLeader}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+              <input type="email" value={profile?.email || ''} disabled className="w-full px-4 py-2.5 border border-slate-200 rounded-lg bg-slate-50 text-slate-500 cursor-not-allowed" />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Bio / About</label>
+              <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} className="w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 resize-none focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Tell us about your scouting journey..." />
+            </div>
+
+            {saveMessage && (
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{saveMessage}</div>
+            )}
+
+            <div className="flex gap-3 pt-4 border-t border-slate-200">
+              <button type="button" onClick={handleSaveProfile} disabled={saving} className="px-6 py-2.5 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 disabled:opacity-50 transition shadow-sm">
+                {saving ? 'Saving...' : 'Save Profile'}
+              </button>
+              <button type="button" onClick={() => { window.location.hash = '#/'; }} className="px-6 py-2.5 rounded-lg bg-slate-200 text-slate-900 font-semibold hover:bg-slate-300 transition">
+                Back to Home
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
 }
-

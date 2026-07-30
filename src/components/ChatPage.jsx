@@ -32,7 +32,7 @@ export default function ChatPage() {
 
       // listen to Firestore profile updates for this user
       try {
-        profileUnsub = listenToDocument('userProfiles', fbUser.uid, (doc) => {
+        profileUnsub = listenToDocument('users', fbUser.uid, (doc) => {
           if (!doc) return;
           setProfile(doc);
           try { saveUserProfile({ uid: doc.id, ...doc }); } catch {}

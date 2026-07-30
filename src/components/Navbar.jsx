@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import {
   Award,
+  ChevronDown,
   Compass,
   ImageIcon,
   LogOut,
@@ -16,61 +17,43 @@ import {
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [user, setUser] = useState(() => {
-    try {
-      const sess = JSON.parse(sessionStorage.getItem('scouts_user_session')) || {};
-      if (sess?.id) return { uid: sess.id };
-    } catch {}
-    return null;
-  });
+  const [user, setUser] = useState(null);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [activeHash, setActiveHash] = useState(window.location.hash || '#/');
 
-  const toggleMenu = () => setIsOpen(!isOpen);
-
-  // IMPORTANT: Use Firebase auth state, not just sessionStorage.
-  // Otherwise the profile icon can appear while Firebase auth is missing,
-  // causing UserProfilePage to redirect back to /auth.
   useEffect(() => {
-    let unsub = null;
-    let cancelled = false;
+    let unsubAuth = null;
+    const initAuth = async () => {
+      try {
+        const { getAuth, onAuthStateChanged } = await import('firebase/auth');
+        const { firebaseApp } = await import('../utils/firebaseConfig');
+        const { getUserProfile, ensureUserProfile } = await import('../utils/profileManager');
+        const auth = getAuth(firebaseApp);
 
-    const run = async () => {
-      const { getAuth, onAuthStateChanged } = await import('firebase/auth');
-      const { firebaseApp } = await import('../utils/firebaseConfig');
-      const { listenToDocument } = await import('../utils/firestoreClient');
-      const { saveUserProfile } = await import('../utils/profileManager');
-
-      const auth = getAuth(firebaseApp);
-      unsub = onAuthStateChanged(auth, (fbUser) => {
-        if (cancelled) return;
-        setUser(fbUser);
-        try {
-          if (fbUser && fbUser.uid) {
-            const docUnsub = listenToDocument('userProfiles', fbUser.uid, (doc) => {
-              if (!doc) return;
-              try { saveUserProfile({ uid: doc.id, ...doc }); } catch { void 0; }
-              try {
-                const sess = JSON.parse(sessionStorage.getItem('scouts_user_session')) || {};
-                if (sess.id === fbUser.uid) {
-                  const updated = { ...sess, name: doc.name || sess.name, email: doc.email || sess.email };
-                  sessionStorage.setItem('scouts_user_session', JSON.stringify(updated));
-                }
-              } catch { void 0; }
-            });
-
-            fbUser._profileUnsub = docUnsub;
+        unsubAuth = onAuthStateChanged(auth, (fbUser) => {
+          if (fbUser) {
+            const prof = getUserProfile(fbUser.uid) || ensureUserProfile(fbUser);
+            const userData = {
+              uid: fbUser.uid,
+              name: prof?.name || fbUser.displayName || fbUser.email || 'User',
+              email: fbUser.email || '',
+              avatar: prof?.avatar || fbUser.photoURL || null,
+              category: prof?.category || 'scout',
+            };
+            setUser(userData);
+            try { sessionStorage.setItem('scouts_user_session', JSON.stringify(userData)); } catch {}
+          } else {
+            setUser(null);
+            try { sessionStorage.removeItem('scouts_user_session'); } catch {}
           }
-        } catch {
-          // ignore
-        }
-      });
+        });
+      } catch (err) {
+        console.error('Navbar auth sync error:', err);
+      }
     };
-
-    run();
-
+    initAuth();
     return () => {
-      cancelled = true;
-      if (typeof unsub === 'function') unsub();
+      if (typeof unsubAuth === 'function') unsubAuth();
     };
   }, []);
 
@@ -81,31 +64,17 @@ export default function Navbar() {
     return () => window.removeEventListener('hashchange', syncHash);
   }, []);
 
-  // Ensure the correct user/session state even if firebase auth is still resolving
-  useEffect(() => {
-    try {
-      const sess = JSON.parse(sessionStorage.getItem('scouts_user_session')) || {};
-      if (!sess?.id) return;
-      // Only keep minimal user presence; Firebase listener will replace with full user later.
-      setUser((prev) => prev || { uid: sess.id });
-    } catch {}
-  }, []);
-
-
   const handleSignOut = async () => {
     try {
       const { getAuth, signOut } = await import('firebase/auth');
       const { firebaseApp } = await import('../utils/firebaseConfig');
       const auth = getAuth(firebaseApp);
       await signOut(auth);
-    } catch {
-      // ignore
-    }
-    try {
-      sessionStorage.removeItem('scouts_user_session');
-    } catch { void 0; }
+    } catch {}
+    try { sessionStorage.removeItem('scouts_user_session'); } catch {}
     setUser(null);
-    window.location.hash = '#/home';
+    setProfileOpen(false);
+    window.location.hash = '#/auth';
   };
 
   const links = [
@@ -118,7 +87,7 @@ export default function Navbar() {
     { label: 'Get In Touch', href: '#/contact', isGetInTouch: true, icon: Send },
   ];
 
-  const logoSrc = `${import.meta.env.BASE_URL}logo.png`;
+  const logoSrc = import.meta.env.BASE_URL + 'logo.png';
 
   const isActiveLink = (href) => {
     if (href === '#/') return activeHash === '#/' || activeHash === '#/home' || activeHash === '';
@@ -126,32 +95,21 @@ export default function Navbar() {
   };
 
   return (
-    <nav
-      className="scout-nav shadow-lg sticky top-0 z-50"
-      style={{
-        background: 'linear-gradient(90deg, var(--color-header), var(--color-primary), var(--color-header))',
-      }}
-    >
+    <nav className="scout-nav shadow-lg sticky top-0 z-50" style={{ background: 'linear-gradient(90deg, var(--color-header), var(--color-primary), var(--color-header))' }}>
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           <a href="#/" className="relative flex items-center space-x-3 group">
             <img src={logoSrc} alt="Amynabad Scouts logo" className="scout-brand-badge w-10 h-10 rounded-full object-cover" />
             <span className="text-xl font-bold text-white hidden sm:inline">Amynabad Scouts</span>
           </a>
-
           <div className="hidden md:flex items-center gap-3">
             {links.map((link) => {
               const Icon = link.icon;
               return (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  className={
-                    link.isGetInTouch
-                      ? 'scout-contact-chip ml-2 inline-flex items-center gap-3 bg-white/10 hover:bg-white/15 text-gray-100 px-3 py-1.5 rounded-xl transition-colors border border-white/10'
-                      : `scout-nav-link text-gray-200 hover:text-[var(--color-secondary)] transition-colors font-medium ${isActiveLink(link.href) ? 'is-active' : ''}`
-                  }
-                >
+                <a key={link.label} href={link.href}
+                  className={link.isGetInTouch
+                    ? 'scout-contact-chip ml-2 inline-flex items-center gap-3 bg-white/10 hover:bg-white/15 text-gray-100 px-3 py-1.5 rounded-xl transition-colors border border-white/10'
+                    : 'scout-nav-link text-gray-200 hover:text-[var(--color-secondary)] transition-colors font-medium' + (isActiveLink(link.href) ? ' is-active' : '')}>
                   {link.isGetInTouch ? (
                     <div className="flex items-center gap-3 leading-tight">
                       <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
@@ -162,104 +120,82 @@ export default function Navbar() {
                         <div className="text-[11px] text-gray-200 leading-none">Web Developer</div>
                       </div>
                     </div>
-                  ) : (
-                    <>
-                      <Icon size={16} aria-hidden="true" />
-                      <span>{link.label}</span>
-                    </>
-                  )}
+                  ) : (<><Icon size={16} aria-hidden="true" /><span>{link.label}</span></>)}
                 </a>
               );
             })}
-
             {user ? (
-              <div className="flex items-center gap-3">
+              <div className="relative group flex items-center gap-2 py-1 px-1">
+                {/* Profile Picture & Name (Clicking opens #/profile) */}
                 <a
                   href="#/profile"
-                  className={`scout-nav-link text-gray-200 hover:text-[var(--color-secondary)] transition-colors font-medium ${isActiveLink('#/profile') ? 'is-active' : ''}`}
-                  title="Profile"
+                  className="flex items-center gap-2 text-white hover:text-[var(--color-secondary)] transition-colors cursor-pointer"
+                  title="Go to Profile"
                 >
-                  <User size={20} className="inline-block" />
+                  {user.avatar ? (
+                    <img src={user.avatar} alt="Profile" className="w-8 h-8 rounded-full object-cover shadow-sm group-hover:scale-105 transition-transform" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-xs font-bold text-white shadow-sm group-hover:scale-105 transition-transform">
+                      {(user.name || user.email || 'U').charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span className="text-sm font-semibold max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out">
+                    {user.name || user.email || 'Profile'}
+                  </span>
                 </a>
+
+                {/* Logout Button (Appears on hover, clicking logs out) */}
                 <button
                   onClick={handleSignOut}
-                  className="text-gray-200 hover:text-[var(--color-accent)] transition-colors flex items-center gap-2"
+                  className="flex items-center gap-1 text-red-200 hover:text-white max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out pl-1 cursor-pointer"
                   title="Logout"
                 >
-                  <LogOut className="w-4 h-4" />
-                  <span className="hidden sm:inline"></span>
+                  <LogOut size={16} />
+                  <span className="text-xs font-medium">Logout</span>
                 </button>
               </div>
             ) : (
-              <a
-                href="#/auth"
-                className={`scout-nav-link text-gray-200 hover:text-[var(--color-secondary)] transition-colors font-medium ${isActiveLink('#/auth') ? 'is-active' : ''}`}
-              >
+              <a href="#/auth" className="scout-nav-link text-gray-200 hover:text-[var(--color-secondary)] transition-colors font-medium flex items-center gap-1.5">
                 <User size={16} aria-hidden="true" />
                 <span>Login</span>
               </a>
             )}
           </div>
-
-          <button
-            onClick={toggleMenu}
-            className="md:hidden text-white focus:outline-none rounded-full border border-white/20 p-2 bg-white/10"
-            aria-label="Toggle menu"
-          >
+          <button onClick={() => setIsOpen(!isOpen)} className="md:hidden text-white focus:outline-none rounded-full border border-white/20 p-2 bg-white/10" aria-label="Toggle menu">
             {isOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
-
         {isOpen && (
           <div className="scout-mobile-menu md:hidden pb-4 pt-3" style={{ borderTop: '1px solid rgba(216, 194, 142, 0.35)' }}>
-            {/* Mobile auth actions */}
-            <div className="px-4 py-2 border-b border-white/10">
+            <div className="px-4 py-3 border-b border-white/10">
               {user ? (
-                <div className="flex items-center justify-between gap-3">
-                  <a
-                    href="#/profile"
-                    onClick={() => setIsOpen(false)}
-                    className="scout-nav-link text-gray-200 hover:text-[var(--color-secondary)] transition-colors font-medium flex-1 justify-center"
-                    title="Profile"
-                  >
-                    <User size={18} className="inline-block" />
+                <div className="flex items-center justify-between">
+                  <a href="#/profile" onClick={() => setIsOpen(false)} className="flex items-center gap-3">
+                    {user.avatar ? (
+                      <img src={user.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-lg font-bold text-white">
+                        {(user.name || user.email || 'U').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-medium text-white">{user.name || 'User'}</p>
+                      {user.category && <span className="text-xs text-emerald-300 capitalize">{user.category}</span>}
+                    </div>
                   </a>
-                  <button
-                    onClick={() => {
-                      setIsOpen(false);
-                      handleSignOut();
-                    }}
-                    className="text-gray-200 hover:text-[var(--color-accent)] transition-colors flex items-center justify-center gap-2"
-                    title="Logout"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </button>
+                  <button onClick={() => { setIsOpen(false); handleSignOut(); }} className="text-gray-200 hover:text-red-300 transition-colors p-2" title="Logout"><LogOut className="w-5 h-5" /></button>
                 </div>
               ) : (
-                <a
-                  href="#/auth"
-                  onClick={() => setIsOpen(false)}
-                  className="scout-nav-link text-gray-200 hover:text-[var(--color-secondary)] transition-colors font-medium"
-                >
-                  <User size={18} aria-hidden="true" />
-                  <span className="ml-2">Login</span>
-                </a>
+                <a href="#/auth" onClick={() => setIsOpen(false)} className="flex items-center gap-2 text-gray-200"><User size={20} /> <span>Login</span></a>
               )}
             </div>
-
             {links.map((link) => {
               const Icon = link.icon;
               return (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  className={
-                    link.isGetInTouch
-                      ? 'scout-contact-chip block py-2 px-4 rounded transition-colors bg-white/10 hover:bg-white/15 text-gray-100 border border-white/10'
-                      : `scout-nav-link py-2 px-4 text-gray-200 hover:text-[var(--color-secondary)] hover:bg-[rgba(109,40,217,0.12)] rounded transition-colors ${isActiveLink(link.href) ? 'is-active' : ''}`
-                  }
-                  onClick={() => setIsOpen(false)}
-                >
+                <a key={link.label} href={link.href} onClick={() => setIsOpen(false)}
+                  className={link.isGetInTouch
+                    ? 'scout-contact-chip block py-2 px-4 rounded transition-colors bg-white/10 hover:bg-white/15 text-gray-100 border border-white/10'
+                    : 'scout-nav-link py-2 px-4 text-gray-200 hover:text-[var(--color-secondary)] hover:bg-[rgba(109,40,217,0.12)] rounded transition-colors'}>
                   {link.isGetInTouch ? (
                     <div className="flex items-center gap-3">
                       <Icon size={20} className="text-[var(--color-accent)]" />
@@ -268,12 +204,7 @@ export default function Navbar() {
                         <div className="text-xs text-gray-200">Web Developer</div>
                       </div>
                     </div>
-                  ) : (
-                    <>
-                      <Icon size={16} aria-hidden="true" />
-                      <span>{link.label}</span>
-                    </>
-                  )}
+                  ) : (<><Icon size={16} aria-hidden="true" /><span>{link.label}</span></>)}
                 </a>
               );
             })}

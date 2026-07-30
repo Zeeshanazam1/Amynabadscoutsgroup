@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://Zeeshanazam1.github.io/Amynabadscoutsgroup",
+  "homepage": "https://zeeshanazam1.github.io/Amynabadscoutsgroup",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
