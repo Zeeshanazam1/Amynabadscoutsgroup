@@ -206,10 +206,10 @@ export default function AdminBadges() {
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select category</option>
-                  <option value="Adventure">Spiritual</option>
-                  <option value="Conservation">Mental</option>
-                  <option value="Leadership">Social</option>
-                  <option value="Service">Physical</option>
+                  <option value="Spiritual">Spiritual</option>
+                  <option value="Mental">Mental</option>
+                  <option value="Social">Social</option>
+                  <option value="Physical">Physical</option>
                 </select>
               </div>
             </div>
