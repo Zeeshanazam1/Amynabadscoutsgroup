@@ -1,4 +1,5 @@
-// Theme management utilities
+import { getCache, SETTINGS, setSettingsDoc, subscribe } from './cmsStore';
+
 const DEFAULT_THEME = {
   primary: '#166534',
   secondary: '#22c55e',
@@ -12,17 +13,11 @@ const DEFAULT_THEME = {
   animation: true,
 };
 
+export { subscribe as subscribeToTheme };
 
-const THEME_KEY = 'scouts_theme';
-const THEMES_BY_PAGE_KEY = 'scouts_themes_by_page';
-
-// Theme category helper.
-// Some parts of the app reference theme keys like "shaheen" / "boyscouts".
-// Others reference unit names like "Shaheen Scouts".
 export const normalizeThemeCategory = (category) => {
   const normalized = String(category || '').toLowerCase().trim();
 
-  // Handle strings like: "Shaheen Scouts"
   if (normalized.includes('shaheen')) return 'shaheen';
   if (normalized.includes('rover')) return 'rover';
   if (normalized.includes('leader')) return 'leader';
@@ -36,64 +31,38 @@ export const normalizeThemeCategory = (category) => {
   return normalized;
 };
 
+const validateTheme = (theme) => ({ ...DEFAULT_THEME, ...(theme || {}) });
 
 export const getTheme = () => {
-  const stored = localStorage.getItem(THEME_KEY);
+  const stored = getCache().theme;
   if (!stored) return DEFAULT_THEME;
-
-  try {
-    return JSON.parse(stored);
-  } catch {
-    return DEFAULT_THEME;
-  }
+  return validateTheme(stored);
 };
 
-const validateTheme = (theme) => {
-  return { ...DEFAULT_THEME, ...(theme || {}) };
-};
-
-const safeParse = (value) => {
-  if (!value) return null;
-  try {
-    return JSON.parse(value);
-  } catch {
-    return null;
-  }
-};
-
-export const setTheme = (theme) => {
+export const setTheme = async (theme) => {
   const validated = validateTheme(theme);
-  localStorage.setItem(THEME_KEY, JSON.stringify(validated));
+  await setSettingsDoc(SETTINGS.THEME, validated);
   applyTheme(validated);
   return validated;
 };
 
-// Backwards-compatible alias (some older code may reference `setThemesByPage`).
-// Backwards-compatible alias.
 export const setThemes = (map) => setThemesByPage(map);
 
-
-
-
-export const resetTheme = () => {
-  localStorage.removeItem(THEME_KEY);
-  // Do not wipe per-page themes; only reset the global default.
+export const resetTheme = async () => {
+  await setSettingsDoc(SETTINGS.THEME, DEFAULT_THEME);
   applyTheme(DEFAULT_THEME);
 };
 
 export const getThemesByPage = () => {
-  const stored = localStorage.getItem(THEMES_BY_PAGE_KEY);
-  const parsed = safeParse(stored);
+  const parsed = getCache().themesByPage;
   if (!parsed || typeof parsed !== 'object') return {};
   return parsed;
 };
 
-export const setThemesByPage = (map) => {
-  localStorage.setItem(THEMES_BY_PAGE_KEY, JSON.stringify(map || {}));
+export const setThemesByPage = async (map) => {
+  await setSettingsDoc(SETTINGS.THEMES_BY_PAGE, map || {});
 };
 
-// Returns a theme for the page.
-// If a page theme isn't saved, it falls back to the global theme.
 export const getThemeForPage = (pageId) => {
   const byPage = getThemesByPage();
   const saved = byPage?.[pageId];
@@ -106,8 +75,6 @@ export const getThemeByCategory = (category) => {
   const themes = {
     shaheen: {
       ...DEFAULT_THEME,
-      // Fix: Shaheen should not look like the default "yellow theme".
-      // Use a purple + green Shaheen palette.
       primary: '#c49c1a',
       secondary: '#c4ad48',
       accent: '#fde68a',
@@ -128,8 +95,6 @@ export const getThemeByCategory = (category) => {
     },
     leader: {
       ...DEFAULT_THEME,
-      // Fix: Shaheen should not look like the default "yellow theme".
-      // Use a purple + green Shaheen palette.
       primary: '#7c3aed',
       secondary: '#22c55e',
       accent: '#fbbf24',
@@ -163,11 +128,10 @@ export const getThemeByCategory = (category) => {
   return themes[normalized] || getTheme();
 };
 
-export const setThemeForPage = (pageId, theme) => {
+export const setThemeForPage = async (pageId, theme) => {
   const byPage = getThemesByPage();
   byPage[pageId] = validateTheme(theme);
-  setThemesByPage(byPage);
-  // Apply immediately if you're on that page.
+  await setThemesByPage(byPage);
   try {
     applyTheme(byPage[pageId]);
   } catch {
@@ -176,20 +140,17 @@ export const setThemeForPage = (pageId, theme) => {
   return byPage[pageId];
 };
 
-// Reset a single page theme back to global theme.
-export const resetPageTheme = (pageId) => {
+export const resetPageTheme = async (pageId) => {
   const byPage = getThemesByPage();
   if (byPage?.[pageId]) delete byPage[pageId];
-  setThemesByPage(byPage);
+  await setThemesByPage(byPage);
   applyTheme(getThemeForPage(pageId));
 };
 
 export const applyTheme = (theme) => {
   const root = document.documentElement;
-
   const validated = validateTheme(theme);
 
-  // Set CSS variables
   root.style.setProperty('--color-primary', validated.primary);
   root.style.setProperty('--color-secondary', validated.secondary);
   root.style.setProperty('--color-accent', validated.accent);
@@ -201,11 +162,8 @@ export const applyTheme = (theme) => {
   root.style.setProperty('--border-radius', getRealBorderRadius(validated.borderRadius));
   root.style.setProperty('--animation', validated.animation ? 'enable' : 'disable');
 
-  // Store in session
   sessionStorage.setItem('theme_applied', 'true');
 };
-
-
 
 const getRealBorderRadius = (size) => {
   const radiusMap = {
@@ -217,9 +175,7 @@ const getRealBorderRadius = (size) => {
   return radiusMap[size] || radiusMap.lg;
 };
 
-export const isValidHexColor = (hex) => {
-  return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(hex);
-};
+export const isValidHexColor = (hex) => /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(hex);
 
 export const getContrastColor = (hexColor) => {
   const hex = hexColor.replace('#', '');
@@ -231,10 +187,7 @@ export const getContrastColor = (hexColor) => {
 };
 
 export const presetThemes = {
-  default: {
-    name: 'Basic Scout',
-    theme: DEFAULT_THEME,
-  },
+  default: { name: 'Basic Scout', theme: DEFAULT_THEME },
   shaheen: {
     name: 'Shaheen Purple-Green',
     theme: {

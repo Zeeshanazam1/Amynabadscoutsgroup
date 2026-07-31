@@ -1,0 +1,312 @@
+{
+  "badges": [
+    {
+      "id": "outdoor-skills",
+      "title": "Outdoor Skills",
+      "section": "Shaheen",
+      "category": "Adventure",
+      "requirements": [
+        "Complete a 5km hike with proper preparation",
+        "Demonstrate basic fire safety and management",
+        "Learn to identify 10 local plants and trees",
+        "Practice proper knot tying (at least 5 essential knots)"
+      ],
+      "badgeType": "Rank Badge"
+    },
+    {
+      "id": "camping-expert",
+      "title": "Camping Expert",
+      "section": "Scout",
+      "category": "Adventure",
+      "requirements": [
+        "Set up and break down a tent independently",
+        "Cook a meal for the unit using camp equipment",
+        "Practice Leave No Trace principles",
+        "Navigate using a map and compass",
+        "Demonstrate basic first aid knowledge"
+      ],
+      "badgeType": "Proficiency Badge"
+    },
+    {
+      "id": "environmental-guardian",
+      "title": "Environmental Guardian",
+      "section": "Scout",
+      "category": "Conservation",
+      "requirements": [
+        "Complete an environmental survey of local area",
+        "Participate in a conservation project",
+        "Learn about local wildlife and habitats",
+        "Create an action plan for reducing personal carbon footprint"
+      ],
+      "badgeType": "Proficiency Badge"
+    },
+    {
+      "id": "leadership-pioneer",
+      "title": "Leadership Pioneer",
+      "section": "Rover",
+      "category": "Leadership",
+      "requirements": [
+        "Lead a team project from planning to completion",
+        "Mentor younger scouts for at least 3 months",
+        "Develop and deliver a training session",
+        "Demonstrate conflict resolution skills",
+        "Create a leadership development plan"
+      ],
+      "badgeType": "Proficiency Badge"
+    },
+    {
+      "id": "community-builder",
+      "title": "Community Builder",
+      "section": "Rover",
+      "category": "Service",
+      "requirements": [
+        "Organize and execute a community service project",
+        "Volunteer at least 20 hours in community",
+        "Build relationships with local organizations",
+        "Document impact of community work",
+        "Present findings to the unit"
+      ],
+      "badgeType": "Proficiency Badge"
+    },
+    {
+      "id": "water-safety",
+      "title": "Water Safety",
+      "section": "Shaheen",
+      "category": "Safety",
+      "requirements": [
+        "Learn basic swimming strokes",
+        "Practice water safety rules and procedures",
+        "Demonstrate rescue techniques",
+        "Understand water environment hazards",
+        "Complete water safety quiz"
+      ],
+      "badgeType": "Proficiency Badge"
+    },
+    {
+      "id": "orienteering-master",
+      "title": "Orienteering Master",
+      "section": "Scout",
+      "category": "Adventure",
+      "requirements": [
+        "Complete an orienteering course successfully",
+        "Read and interpret topographic maps",
+        "Navigate using compass bearings",
+        "Participate in an orienteering competition",
+        "Plan and lead a navigation trail"
+      ],
+      "badgeType": "Proficiency Badge"
+    },
+    {
+      "id": "survival-skills",
+      "title": "Survival Skills",
+      "section": "Rover",
+      "category": "Adventure",
+      "requirements": [
+        "Build emergency shelter",
+        "Demonstrate water purification methods",
+        "Identify edible and medicinal plants",
+        "Practice emergency signaling",
+        "Complete 24-hour wilderness challenge"
+      ],
+      "badgeType": "Proficiency Badge"
+    },
+    {
+      "id": "tech-innovator",
+      "title": "Tech Innovator",
+      "section": "Scout",
+      "category": "Innovation",
+      "requirements": [
+        "Learn basic coding or app development",
+        "Create a tech solution to solve a problem",
+        "Document your innovation process",
+        "Present tech project to unit members",
+        "Help teach technology skills to others"
+      ],
+      "badgeType": "Proficiency Badge"
+    },
+    {
+      "id": "cultural-ambassador",
+      "title": "Cultural Ambassador",
+      "section": "Shaheen",
+      "category": "Culture",
+      "requirements": [
+        "Learn about 3 different cultures",
+        "Participate in cultural exchange activity",
+        "Cook a traditional dish from another culture",
+        "Share cultural learnings with unit",
+        "Promote intercultural understanding"
+      ],
+      "badgeType": "Proficiency Badge"
+    }
+  ],
+  "events": [
+    {
+      "id": "camping-2026-07",
+      "title": "Summer Camping Adventure",
+      "date": "2026-07-15T08:00:00Z",
+      "location": "Mountain Ridge Camp Site",
+      "description": "A 3-day camping expedition for all scout sections. Learn wilderness skills and bond with your unit.",
+      "category": "Adventure",
+      "attendees": "All Sections"
+    },
+    {
+      "id": "badge-test-2026-06-20",
+      "title": "Badge Testing Week",
+      "date": "2026-06-20T10:00:00Z",
+      "location": "Scout Hall",
+      "description": "Official badge testing for scouts who have completed their requirements.",
+      "category": "Testing",
+      "attendees": "Interested Scouts"
+    },
+    {
+      "id": "training-2026-07-02",
+      "title": "Leadership Training Workshop",
+      "date": "2026-07-02T14:00:00Z",
+      "location": "Scout Hall",
+      "description": "Advanced training for aspiring unit leaders and rover scouts.",
+      "category": "Training",
+      "attendees": "Rover & Senior Scouts"
+    },
+    {
+      "id": "community-service-2026-06-25",
+      "title": "Community Clean-up Drive",
+      "date": "2026-06-25T09:00:00Z",
+      "location": "Local Park",
+      "description": "Join us for environmental conservation and community service.",
+      "category": "Service",
+      "attendees": "All Scouts"
+    },
+    {
+      "id": "orientation-2026-08-05",
+      "title": "Orienteering Competition",
+      "date": "2026-08-05T07:00:00Z",
+      "location": "Forest Valley",
+      "description": "Test your navigation and map-reading skills in a competitive setting.",
+      "category": "Competition",
+      "attendees": "All Sections"
+    },
+    {
+      "id": "water-sports-2026-07-22",
+      "title": "Water Sports Day",
+      "date": "2026-07-22T10:00:00Z",
+      "location": "City Lake",
+      "description": "Swimming, kayaking, and water safety certification opportunities.",
+      "category": "Adventure",
+      "attendees": "All Scouts"
+    }
+  ],
+  "results": [
+    {
+      "id": "result-001",
+      "scoutName": "Ahmed Ali",
+      "section": "Scout",
+      "badge": "Outdoor Skills",
+      "status": "Passed",
+      "date": "2026-06-10",
+      "remarks": "Excellent performance. Well-prepared and demonstrated all skills."
+    },
+    {
+      "id": "result-002",
+      "scoutName": "Fatima Khan",
+      "section": "Shaheen",
+      "badge": "Water Safety",
+      "status": "Passed",
+      "date": "2026-06-10",
+      "remarks": "Outstanding swimming technique. Ready for advanced water courses."
+    },
+    {
+      "id": "result-003",
+      "scoutName": "Hassan Raza",
+      "section": "Scout",
+      "badge": "Camping Expert",
+      "status": "Passed",
+      "date": "2026-06-09",
+      "remarks": "Great teamwork and practical knowledge."
+    },
+    {
+      "id": "result-004",
+      "scoutName": "Zara Ahmed",
+      "section": "Rover",
+      "badge": "Leadership Pioneer",
+      "status": "Passed",
+      "date": "2026-06-08",
+      "remarks": "Exceptional leadership qualities demonstrated. Mentor potential."
+    },
+    {
+      "id": "result-005",
+      "scoutName": "Muhammad Samir",
+      "section": "Scout",
+      "badge": "Environmental Guardian",
+      "status": "In Review",
+      "date": "2026-06-12",
+      "remarks": "Submission received. Under evaluation by the board."
+    },
+    {
+      "id": "result-006",
+      "scoutName": "Amina Hassan",
+      "section": "Shaheen",
+      "badge": "Cultural Ambassador",
+      "status": "Passed",
+      "date": "2026-06-11",
+      "remarks": "Brought excellent cultural insights and perspectives."
+    },
+    {
+      "id": "result-007",
+      "scoutName": "Omar Ibrahim",
+      "section": "Rover",
+      "badge": "Survival Skills",
+      "status": "Passed",
+      "date": "2026-06-07",
+      "remarks": "Demonstrated comprehensive survival knowledge and practical application."
+    },
+    {
+      "id": "result-008",
+      "scoutName": "Layla Mansour",
+      "section": "Scout",
+      "badge": "Tech Innovator",
+      "status": "Passed",
+      "date": "2026-06-06",
+      "remarks": "Creative solution developed. Code quality excellent."
+    }
+  ],
+  "websiteInfo": {
+    "unitName": "Amynabad Scouts Group",
+    "tagline": "Building character, developing skills, fostering leadership",
+    "contactEmail": "contact@amynabadscouts.org",
+    "phone": "+92 XXX XXXXXXX"
+  },
+  "shop": {
+    "shopSettings": {
+      "enabled": true,
+      "featuredCategoryId": null
+    },
+    "categories": [
+      {
+        "id": "cat-1785424871066",
+        "name": "Badges"
+      },
+      {
+        "id": "cat-1785424890414",
+        "name": "Uniform"
+      },
+      {
+        "id": "cat-1785424903020",
+        "name": "Essentials"
+      },
+      {
+        "id": "cat-1785424920636",
+        "name": "BSS related Stuff"
+      }
+    ],
+    "products": [
+      {
+        "id": "prod-1785425009366",
+        "name": "Scarf",
+        "price": 300,
+        "categoryId": "cat-1785424890414",
+        "description": "IDBSA scarf",
+        "images": []
+      }
+    ]
+  }
+}

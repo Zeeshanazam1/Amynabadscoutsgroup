@@ -1,26 +1,19 @@
-// Advertisement management utilities
-const AD_KEY = 'scouts_advertisements';
+import {
+  getCache,
+  subscribe,
+  COLLECTIONS,
+  setCollectionDoc,
+  removeCollectionDoc,
+} from './cmsStore';
 
-export const getAdvertisements = () => {
-  const data = localStorage.getItem(AD_KEY);
-  if (!data) {
-    return [];
-  }
-  try {
-    return JSON.parse(data);
-  } catch {
-    return [];
-  }
-};
+export { subscribe as subscribeToAds };
 
-export const saveAdvertisements = (ads) => {
-  localStorage.setItem(AD_KEY, JSON.stringify(ads));
-};
+export const getAdvertisements = () => getCache().advertisements || [];
 
-export const addAdvertisement = (ad) => {
-  const ads = getAdvertisements();
+export const addAdvertisement = async (ad) => {
+  const id = `ad-${Date.now()}`;
   const newAd = {
-    id: `ad-${Date.now()}`,
+    id,
     title: ad.title,
     type: ad.type || 'image',
     imageUrl: ad.imageUrl || '',
@@ -32,30 +25,25 @@ export const addAdvertisement = (ad) => {
     enabled: ad.enabled !== false,
     createdAt: new Date().toISOString().split('T')[0],
   };
-  ads.push(newAd);
-  saveAdvertisements(ads);
+  await setCollectionDoc(COLLECTIONS.ADVERTISEMENTS, id, newAd);
   return newAd;
 };
 
-export const updateAdvertisement = (adId, updates) => {
-  const ads = getAdvertisements();
-  const index = ads.findIndex(a => a.id === adId);
-  if (index !== -1) {
-    ads[index] = { ...ads[index], ...updates };
-    saveAdvertisements(ads);
-    return ads[index];
-  }
-  return null;
+export const updateAdvertisement = async (adId, updates) => {
+  const existing = getAdvertisements().find((a) => a.id === adId);
+  if (!existing) return null;
+  const merged = { ...existing, ...updates, id: adId };
+  await setCollectionDoc(COLLECTIONS.ADVERTISEMENTS, adId, merged);
+  return merged;
 };
 
-export const deleteAdvertisement = (adId) => {
-  const ads = getAdvertisements().filter(a => a.id !== adId);
-  saveAdvertisements(ads);
+export const deleteAdvertisement = async (adId) => {
+  await removeCollectionDoc(COLLECTIONS.ADVERTISEMENTS, adId);
 };
 
 export const getAdsByTrigger = (trigger) => {
   return getAdvertisements().filter(
-    ad => ad.enabled && ad.triggerOn.includes(trigger)
+    (ad) => ad.enabled && ad.triggerOn.includes(trigger),
   );
 };
 
