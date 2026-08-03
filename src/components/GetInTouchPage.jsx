@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Mail,
   MessageCircle,
@@ -13,7 +13,7 @@ import {
   addSuggestion,
   addAdRequest,
 } from '../utils/contactSubmissions';
-import { getWebsiteInfo } from '../utils/dataManager';
+import { getWebsiteInfo, subscribeToData } from '../utils/dataManager';
 
 const triggerOptions = [
   { id: 'results', label: 'Results Page' },
@@ -24,7 +24,15 @@ const fieldClass =
   'w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 bg-white';
 
 export default function GetInTouchPage() {
-  const websiteInfo = useMemo(() => getWebsiteInfo(), []);
+  const [websiteInfo, setWebsiteInfo] = useState(() => getWebsiteInfo());
+
+  useEffect(() => {
+    const unsubscribe = subscribeToData(() => {
+      setWebsiteInfo(getWebsiteInfo());
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const [active, setActive] = useState('feedback');
   const [successMsg, setSuccessMsg] = useState('');

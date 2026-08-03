@@ -2,12 +2,16 @@ import { useEffect, useState } from 'react';
 
 import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import AdGuard from './AdGuard';
-import { getResults } from '../utils/dataManager';
+import { getResults, subscribeToData } from '../utils/dataManager';
 
 export default function Results() {
   const [results, setResults] = useState(() => getResults());
 
   useEffect(() => {
+    const unsubscribe = subscribeToData(() => {
+      setResults(getResults());
+    });
+
     const handleStorage = (event) => {
       if (event.key === 'scouts_data') {
         setResults(getResults());
@@ -15,7 +19,10 @@ export default function Results() {
     };
 
     window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+    return () => {
+      unsubscribe();
+      window.removeEventListener('storage', handleStorage);
+    };
   }, []);
 
   const getStatusIcon = (status) => {

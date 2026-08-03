@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
-import eventsData from '../data/events.json';
 import { Calendar, MapPin, Users, Clock } from 'lucide-react';
+import { getEvents, subscribeToData } from '../utils/dataManager';
 
 const CountdownBox = ({ value, label }) => (
   <div className="text-center">
@@ -12,12 +12,19 @@ const CountdownBox = ({ value, label }) => (
 export default function CountdownTimer() {
   const [countdown, setCountdown] = useState(null);
   const [nextEvent, setNextEvent] = useState(null);
+  const [events, setEvents] = useState(() => getEvents());
+
+  useEffect(() => {
+    const unsubscribe = subscribeToData(() => {
+      setEvents(getEvents());
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const sortedEvents = useMemo(() => {
-    return [...eventsData].sort(
-      (a, b) => new Date(a.date) - new Date(b.date)
-    );
-  }, []);
+    return [...events].sort((a, b) => new Date(a.date) - new Date(b.date));
+  }, [events]);
 
   useEffect(() => {
     const findNextEvent = () => {

@@ -21,6 +21,7 @@ import { getUserProfile } from '../utils/profileManager';
 import { addChatAccessRequest, getChatAccessRequests, addLeaveApplication } from '../utils/contactSubmissions';
 import { getThemeBackgroundByCategory } from '../utils/themeBackgroundManager';
 import { applyTheme, getThemeByCategory } from '../utils/themeManager';
+import { getWebsiteInfo, subscribeToData } from '../utils/dataManager';
 
 
 
@@ -31,7 +32,15 @@ export default function HomePage() {
 
   const [userProfile, setUserProfile] = useState(null);
   const [chatRequestStatus, setChatRequestStatus] = useState('');
+  const [siteInfo, setSiteInfo] = useState(() => getWebsiteInfo());
 
+  useEffect(() => {
+    const unsubscribe = subscribeToData(() => {
+      setSiteInfo(getWebsiteInfo());
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const session = (() => {
@@ -252,15 +261,14 @@ export default function HomePage() {
           <div className="mb-6">
             <span className="scout-wood-label text-white px-4 py-2 rounded-full font-bold text-sm">
               <Tent size={16} aria-hidden="true" />
-              Welcome to Amynabad Scouts
+              Welcome to {siteInfo?.unitName || 'Amynabad Scouts'}
             </span>
           </div>
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
             Building Leaders, <br /> Creating Futures
           </h1>
           <p className="text-xl sm:text-2xl text-gray-200 mb-8 max-w-2xl mx-auto">
-            Join our thriving scout unit and embark on an adventure of personal growth,
-            leadership, and community service.
+            {siteInfo?.tagline || 'Join our thriving scout unit and embark on an adventure of personal growth, leadership, and community service.'}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
@@ -377,6 +385,33 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
+      {/* Profile Card Section */}
+      <section className="bg-gradient-to-b from-slate-50 to-white py-16">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden p-8 md:p-12">
+            <div className="flex justify-center mb-6">
+              <img
+                src={import.meta.env.BASE_URL + 'assets/contact-photo.png'}
+                alt="Zeeshan Azam"
+                className="w-40 h-40 rounded-full object-cover shadow-md border-4 border-[var(--color-primary)]"
+              />
+            </div>
+            <h2 className="text-4xl font-bold text-slate-900 mb-2">Zeeshan Azam</h2>
+            <p className="text-xl text-[var(--color-secondary)] font-semibold mb-6">Web Developer</p>
+            <p className="text-gray-600 text-lg mb-8 max-w-2xl mx-auto">
+              Passionate about creating beautiful, functional web experiences for the Amynabad Scouts community.
+            </p>
+            <a
+              href="#/contact"
+              className="inline-flex items-center gap-2 bg-[var(--color-primary)] text-white font-bold py-3 px-8 rounded-lg transition-colors hover:opacity-90"
+            >
+              <Send size={18} />
+              Get in Touch
+            </a>
+          </div>
+        </div>
+      </section>
 
       {/* Stats Section */}
       <section className="bg-white py-12">

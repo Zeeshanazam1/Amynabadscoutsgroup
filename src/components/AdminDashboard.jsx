@@ -56,18 +56,19 @@ export default function AdminDashboard() {
 
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen" style={{backgroundColor: 'color-mix(in srgb, var(--color-background) 60%, var(--color-primary) 8%)'}}>
       {/* Header */}
-      <header className="bg-slate-900 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <header className="text-white shadow-lg" style={{background: 'linear-gradient(90deg, var(--color-header), var(--color-primary), var(--color-header))'}}>
+        <div className="max-w-7xl mx-auto px-4 py-5 flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-            <p className="text-slate-400 text-sm">Amynabad Scouts Group Management</p>
+            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+            <p className="text-white/70 text-sm">Amynabad Scouts Group Management</p>
           </div>
           <div className="flex gap-3">
             <button
               onClick={handleExport}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg transition font-semibold hover:opacity-90"
+              style={{backgroundColor: 'var(--color-secondary)', color: 'white'}}
               title="Export all data as JSON"
             >
               <Download className="w-4 h-4" />
@@ -75,7 +76,8 @@ export default function AdminDashboard() {
             </button>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg transition font-semibold text-white hover:opacity-90"
+              style={{backgroundColor: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)'}}
             >
               <LogOut className="w-4 h-4" />
               Logout
@@ -88,18 +90,19 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <nav className="bg-white rounded-lg shadow-md overflow-hidden">
+            <nav className="rounded-lg shadow-lg overflow-hidden" style={{backgroundColor: 'rgba(255,255,255,0.95)'}}>
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <button
                     key={item.id}
                     onClick={() => setActiveTab(item.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 border-l-4 transition ${
-                      activeTab === item.id
-                        ? 'bg-amber-50 border-amber-500 text-amber-700 font-semibold'
-                        : 'border-transparent text-slate-700 hover:bg-slate-50'
-                    }`}
+                    className={`w-full flex items-center gap-3 px-4 py-3 border-l-4 transition font-medium ${
+                      activeTab === item.id ? 'text-white font-semibold' : 'border-transparent text-slate-700 hover:bg-slate-50'}`}
+                    style={activeTab === item.id ? {
+                      backgroundColor: 'var(--color-primary)',
+                      borderLeftColor: 'var(--color-secondary)'
+                    } : {}}
                   >
                     <Icon className="w-5 h-5" />
                     {item.label}
@@ -109,8 +112,8 @@ export default function AdminDashboard() {
             </nav>
 
             {/* Quick Stats */}
-            <div className="mt-6 bg-white rounded-lg shadow-md p-4">
-              <h3 className="font-semibold text-slate-900 mb-4">Quick Info</h3>
+            <div className="mt-6 rounded-lg shadow-lg p-5" style={{backgroundColor: 'rgba(255,255,255,0.95)'}}>
+              <h3 className="font-bold text-lg mb-4" style={{color: 'var(--color-primary)'}}>Quick Info</h3>
               <div className="space-y-3 text-sm">
                 <p className="text-slate-600">
                   💡 Use the menu on the left to manage different sections of your website.
@@ -127,7 +130,7 @@ export default function AdminDashboard() {
 
           {/* Main Content */}
           <div className="lg:col-span-3">
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="rounded-lg shadow-lg p-6" style={{backgroundColor: 'rgba(255,255,255,0.97)'}}>
               {activeTab === 'results' && <AdminResults />}
               {activeTab === 'badges' && <AdminBadges />}
               {activeTab === 'events' && <AdminEvents />}

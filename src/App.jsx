@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { Camera, Phone, Mail, Share2 } from 'lucide-react';
 import Navbar from './components/Navbar';
 import HomePage from './components/HomePage';
 import BadgeLibrary from './components/BadgeLibrary';
@@ -16,7 +17,7 @@ import ShopPage from './components/ShopPage';
 import EventGalleryPage from './components/EventGalleryPage';
 import EventGalleryLoginPage from './components/EventGalleryLoginPage';
 import { isAuthenticated } from './utils/authManager';
-import { initializeData, getWebsiteInfo } from './utils/dataManager';
+import { initializeData, getWebsiteInfo, subscribeToData } from './utils/dataManager';
 import { getTheme, applyTheme, getThemeForPage } from './utils/themeManager';
 import { firebaseApp } from './utils/firebaseConfig';
 
@@ -43,8 +44,14 @@ function App() {
   useEffect(() => {
     initializeData(badgesData, eventsData, resultsData);
     const info = getWebsiteInfo();
-    queueMicrotask(() => setWebsiteInfo(info));
+    setWebsiteInfo(info);
     applyTheme(getTheme());
+
+    const unsubscribe = subscribeToData(() => {
+      setWebsiteInfo(getWebsiteInfo());
+    });
+
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -140,31 +147,39 @@ function App() {
       {currentPage !== 'admin-login' && currentPage !== 'admin-dashboard' && <Navbar />}
       {renderPage()}
       {currentPage !== 'admin-login' && currentPage !== 'admin-dashboard' && (
-        <footer className="scout-footer bg-slate-800 text-gray-300 py-8 mt-12">
+        <footer className="scout-footer text-white py-10 mt-16" style={{backgroundColor: 'var(--color-footer)', borderTop: '3px solid var(--color-secondary)'}}>
           <div className="max-w-7xl mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
               <div className="md:col-span-2 text-center md:text-left">
-                <p className="mb-2">&copy; 2026 {websiteInfo?.unitName || 'Amynabad Scouts Group'}. All rights reserved.</p>
-                <p className="text-sm text-gray-400">
+                <p className="mb-3 font-semibold text-lg">&copy; 2026 {websiteInfo?.unitName || 'Amynabad Scouts Group'}. All rights reserved.</p>
+                <p className="text-sm text-white/80">
                   {websiteInfo?.tagline || 'zeeshanazam.1\n03221318878\nzeeshanazam11122@gmail.com'}
                 </p>
               </div>
               <div className="md:col-span-1 text-center">
-                <div className="flex items-center justify-center gap-x-4 text-[11px] mt-2">
-                  <a href="https://instagram.com/zeeshanazam.1" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-gray-300 hover:text-white transition whitespace-nowrap">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-white/10">&#x1F4F7;</span>
+                <div className="flex items-center justify-center gap-x-4 text-[11px] mt-3 flex-wrap">
+                  <a href="https://instagram.com/zeeshanazam.1" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-white/90 hover:text-white transition whitespace-nowrap">
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded" style={{backgroundColor: 'rgba(255,255,255,0.15)'}}>
+                      <Camera size={16} />
+                    </span>
                     <span className="underline underline-offset-2">zeeshanazam.1</span>
                   </a>
-                  <a href="https://wa.me/923221318878" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-gray-300 hover:text-white transition whitespace-nowrap">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-white/10">&#x1F4AC;</span>
+                  <a href="https://wa.me/923221318878" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-white/90 hover:text-white transition whitespace-nowrap">
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded" style={{backgroundColor: 'rgba(255,255,255,0.15)'}}>
+                      <Phone size={16} />
+                    </span>
                     <span className="underline underline-offset-2">03221318878</span>
                   </a>
-                  <a href="mailto:zeeshanazam11122@gmail.com" className="inline-flex items-center gap-2 text-gray-300 hover:text-white transition whitespace-nowrap">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-white/10">&#x2709;&#xFE0F;</span>
+                  <a href="mailto:zeeshanazam11122@gmail.com" className="inline-flex items-center gap-2 text-white/90 hover:text-white transition whitespace-nowrap">
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded" style={{backgroundColor: 'rgba(255,255,255,0.15)'}}>
+                      <Mail size={16} />
+                    </span>
                     <span className="underline underline-offset-2">zeeshanazam11122@gmail.com</span>
                   </a>
-                  <a href="https://www.linkedin.com/in/zeeshanazam.1/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-gray-300 hover:text-white transition whitespace-nowrap">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-white/10">in</span>
+                  <a href="https://www.linkedin.com/in/zeeshanazam.1/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-white/90 hover:text-white transition whitespace-nowrap">
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded" style={{backgroundColor: 'rgba(255,255,255,0.15)'}}>
+                      <Share2 size={16} />
+                    </span>
                     <span className="underline underline-offset-2">zeeshanazam.1</span>
                   </a>
                 </div>

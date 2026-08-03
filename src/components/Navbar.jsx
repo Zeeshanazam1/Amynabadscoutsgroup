@@ -84,7 +84,6 @@ export default function Navbar() {
     { label: 'Shop', href: '#/shop', icon: ShoppingBag },
     { label: 'Event Gallery', href: '#/event-gallery', icon: ImageIcon },
     { label: 'Results', href: '#/results', icon: Map },
-    { label: 'Get In Touch', href: '#/contact', isGetInTouch: true, icon: Send },
   ];
 
   const logoSrc = import.meta.env.BASE_URL + 'logo.png';
@@ -108,17 +107,14 @@ export default function Navbar() {
               return (
                 <a key={link.label} href={link.href}
                   className={link.isGetInTouch
-                    ? 'scout-contact-chip ml-2 inline-flex items-center gap-3 bg-white/10 hover:bg-white/15 text-gray-100 px-3 py-1.5 rounded-xl transition-colors border border-white/10'
+                    ? 'ml-2 inline-flex items-center gap-2 rounded-full bg-white/15 px-2.5 py-2 text-gray-100 transition-all duration-200 hover:bg-white/25 hover:text-white border border-white/20 shadow-sm'
                     : 'scout-nav-link text-gray-200 hover:text-[var(--color-secondary)] transition-colors font-medium' + (isActiveLink(link.href) ? ' is-active' : '')}>
                   {link.isGetInTouch ? (
                     <div className="flex items-center gap-3 leading-tight">
-                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                        <Icon size={17} className="text-[var(--color-accent)]" />
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15">
+                        <Icon size={15} className="text-[var(--color-accent)]" />
                       </div>
-                      <div>
-                        <div className="font-semibold text-xs text-white leading-none">Zeeshan Azam</div>
-                        <div className="text-[11px] text-gray-200 leading-none">Web Developer</div>
-                      </div>
+                      <span className="text-[11px] font-semibold text-white">Contact</span>
                     </div>
                   ) : (<><Icon size={16} aria-hidden="true" /><span>{link.label}</span></>)}
                 </a>
@@ -139,19 +135,19 @@ export default function Navbar() {
                       {(user.name || user.email || 'U').charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <span className="text-sm font-semibold max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out">
-                    {user.name || user.email || 'Profile'}
+                  <span className="text-sm font-semibold max-w-0 opacity-0 group-hover:max-w-[5rem] group-hover:opacity-100 overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out">
+                    {(user.name || user.email || 'Profile').split(' ')[0] || 'Profile'}
                   </span>
                 </a>
 
                 {/* Logout Button (Appears on hover, clicking logs out) */}
                 <button
                   onClick={handleSignOut}
-                  className="flex items-center gap-1 text-red-200 hover:text-white max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out pl-1 cursor-pointer"
+                  className="flex items-center gap-1 text-red-200 hover:text-white max-w-0 opacity-0 group-hover:max-w-[4rem] group-hover:opacity-100 overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out pl-1 cursor-pointer"
                   title="Logout"
                 >
                   <LogOut size={16} />
-                  <span className="text-xs font-medium">Logout</span>
+                  <span className="text-[11px] font-medium"></span>
                 </button>
               </div>
             ) : (
@@ -194,15 +190,12 @@ export default function Navbar() {
               return (
                 <a key={link.label} href={link.href} onClick={() => setIsOpen(false)}
                   className={link.isGetInTouch
-                    ? 'scout-contact-chip block py-2 px-4 rounded transition-colors bg-white/10 hover:bg-white/15 text-gray-100 border border-white/10'
+                    ? 'block rounded-full border border-white/20 bg-white/15 px-4 py-2 text-gray-100 transition-colors hover:bg-white/25'
                     : 'scout-nav-link py-2 px-4 text-gray-200 hover:text-[var(--color-secondary)] hover:bg-[rgba(109,40,217,0.12)] rounded transition-colors'}>
                   {link.isGetInTouch ? (
-                    <div className="flex items-center gap-3">
-                      <Icon size={20} className="text-[var(--color-accent)]" />
-                      <div className="leading-tight">
-                        <div className="font-semibold text-sm text-white">Zeeshan Azam</div>
-                        <div className="text-xs text-gray-200">Web Developer</div>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <Icon size={18} className="text-[var(--color-accent)]" />
+                      <span className="text-sm font-medium text-white">Contact</span>
                     </div>
                   ) : (<><Icon size={16} aria-hidden="true" /><span>{link.label}</span></>)}
                 </a>

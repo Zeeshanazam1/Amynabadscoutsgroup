@@ -1,143 +1,65 @@
 [
   {
-    "id": "outdoor-skills",
-    "title": "Outdoor Skills",
-    "section": "Shaheen",
-    "category": "Adventure",
-    "requirements": [
-      "Complete a 5km hike with proper preparation",
-      "Demonstrate basic fire safety and management",
-      "Learn to identify 10 local plants and trees",
-      "Practice proper knot tying (at least 5 essential knots)"
-    ],
-    "badgeType": "Rank Badge"
-  },
-
-  {
-    "id": "camping-expert",
-
-    "title": "Camping Expert",
+    "id": "ittehad",
+    "title": "Ittehad",
     "section": "Scout",
-    "category": "Adventure",
+    "category": "Unity",
     "requirements": [
-      "Set up and break down a tent independently",
-      "Cook a meal for the unit using camp equipment",
-      "Practice Leave No Trace principles",
-      "Navigate using a map and compass",
-      "Demonstrate basic first aid knowledge"
+      "Understand the meaning of unity in the scout spirit",
+      "Take part in a group activity that promotes cooperation",
+      "Show respect to different people and cultures",
+      "Help organize a small team task",
+      "Reflect on how teamwork strengthens the unit"
     ],
-    "badgeType": "Proficiency Badge"
-  },
-  {
-    "id": "environmental-guardian",
-    "title": "Environmental Guardian",
-    "section": "Scout",
-    "category": "Conservation",
-    "requirements": [
-      "Complete an environmental survey of local area",
-      "Participate in a conservation project",
-      "Learn about local wildlife and habitats",
-      "Create an action plan for reducing personal carbon footprint"
+    "badgeType": "Rank Badge",
+    "descriptionHtml": "<p><strong>Ittehad</strong> is a rank badge that celebrates unity, cooperation, and shared purpose. This book-style guide helps scouts learn the values behind the badge through five simple topics.</p>",
+    "images": [
+      "https://placehold.co/900x600?text=Ittehad+Badge"
     ],
-    "badgeType": "Proficiency Badge"
-  },
-  {
-    "id": "leadership-pioneer",
-    "title": "Leadership Pioneer",
-    "section": "Rover",
-    "category": "Leadership",
-    "requirements": [
-      "Lead a team project from planning to completion",
-      "Mentor younger scouts for at least 3 months",
-      "Develop and deliver a training session",
-      "Demonstrate conflict resolution skills",
-      "Create a leadership development plan"
-    ],
-    "badgeType": "Proficiency Badge"
-  },
-  {
-    "id": "community-builder",
-    "title": "Community Builder",
-    "section": "Rover",
-    "category": "Service",
-    "requirements": [
-      "Organize and execute a community service project",
-      "Volunteer at least 20 hours in community",
-      "Build relationships with local organizations",
-      "Document impact of community work",
-      "Present findings to the unit"
-    ],
-    "badgeType": "Proficiency Badge"
-  },
-  {
-    "id": "water-safety",
-    "title": "Water Safety",
-    "section": "Shaheen",
-    "category": "Safety",
-    "requirements": [
-      "Learn basic swimming strokes",
-      "Practice water safety rules and procedures",
-      "Demonstrate rescue techniques",
-      "Understand water environment hazards",
-      "Complete water safety quiz"
-    ],
-    "badgeType": "Proficiency Badge"
-  },
-  {
-    "id": "orienteering-master",
-    "title": "Orienteering Master",
-    "section": "Scout",
-    "category": "Adventure",
-    "requirements": [
-      "Complete an orienteering course successfully",
-      "Read and interpret topographic maps",
-      "Navigate using compass bearings",
-      "Participate in an orienteering competition",
-      "Plan and lead a navigation trail"
-    ],
-    "badgeType": "Proficiency Badge"
-  },
-  {
-    "id": "survival-skills",
-    "title": "Survival Skills",
-    "section": "Rover",
-    "category": "Adventure",
-    "requirements": [
-      "Build emergency shelter",
-      "Demonstrate water purification methods",
-      "Identify edible and medicinal plants",
-      "Practice emergency signaling",
-      "Complete 24-hour wilderness challenge"
-    ],
-    "badgeType": "Proficiency Badge"
-  },
-  {
-    "id": "tech-innovator",
-    "title": "Tech Innovator",
-    "section": "Scout",
-    "category": "Innovation",
-    "requirements": [
-      "Learn basic coding or app development",
-      "Create a tech solution to solve a problem",
-      "Document your innovation process",
-      "Present tech project to unit members",
-      "Help teach technology skills to others"
-    ],
-    "badgeType": "Proficiency Badge"
-  },
-  {
-    "id": "cultural-ambassador",
-    "title": "Cultural Ambassador",
-    "section": "Shaheen",
-    "category": "Culture",
-    "requirements": [
-      "Learn about 3 different cultures",
-      "Participate in cultural exchange activity",
-      "Cook a traditional dish from another culture",
-      "Share cultural learnings with unit",
-      "Promote intercultural understanding"
-    ],
-    "badgeType": "Proficiency Badge"
+    "pdf": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+    "book": {
+      "title": "Ittehad Badge Book",
+      "subtitle": "Rank Badge • Unity",
+      "pages": [
+        {
+          "id": "ittehad-page-1",
+          "type": "text",
+          "title": "Introduction",
+          "content": "<h3>Welcome to Ittehad</h3><p>This badge teaches the meaning of unity. Scouts learn that strong teams grow when everyone supports one another.</p>",
+          "important": true
+        },
+        {
+          "id": "ittehad-page-2",
+          "type": "text",
+          "title": "Meaning of Unity",
+          "content": "<h3>What Ittehad Means</h3><p>Unity means working together with respect, kindness, and shared responsibility. It helps the group succeed and stay strong.</p>",
+          "important": true
+        },
+        {
+          "id": "ittehad-page-3",
+          "type": "image",
+          "title": "Group Activity",
+          "content": "A scout team learns best when members listen, share, and support each other.",
+          "imageUrl": "https://placehold.co/900x600?text=Group+Activity",
+          "important": false
+        },
+        {
+          "id": "ittehad-page-4",
+          "type": "pdf",
+          "title": "Activity Guide",
+          "content": "Open the PDF guide for the badge activity steps and reflection questions.",
+          "pdfUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+          "important": true
+        },
+        {
+          "id": "ittehad-page-5",
+          "type": "text",
+          "title": "Reflection",
+          "content": "<h3>Final Reflection</h3><p>Ask yourself: How did I help my team today? What did I learn about working together?</p>",
+          "important": false
+        }
+      ]
+    }
   }
 ]
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trash2, Edit2, Plus, X } from 'lucide-react';
+import { Trash2, Edit2, Plus, X, BookOpen, FileText, Image as ImageIcon, Star } from 'lucide-react';
 import {
   getBadges,
   addBadge,
@@ -23,7 +23,14 @@ export default function AdminBadges() {
   });
   const [newRequirement, setNewRequirement] = useState('');
   const [imageUrlDraft, setImageUrlDraft] = useState('');
-
+  const [bookPageDraft, setBookPageDraft] = useState({
+    title: '',
+    type: 'text',
+    content: '',
+    imageUrl: '',
+    pdfUrl: '',
+    important: false,
+  });
 
   const addImageUrl = (url) => {
     const trimmed = (url || '').trim();
@@ -56,11 +63,25 @@ export default function AdminBadges() {
       return;
     }
 
+    const book = {
+      title: `${formData.title} Book`,
+      subtitle: `${formData.badgeType || 'Proficiency Badge'} • ${formData.category}`,
+      pages: (formData.book?.pages || []).map((page) => ({
+        ...page,
+        content: page.content || '',
+      })),
+    };
+
+    const payload = {
+      ...formData,
+      book,
+    };
+
     if (editingId) {
-      updateBadge(editingId, formData);
+      updateBadge(editingId, payload);
       setEditingId(null);
     } else {
-      addBadge(formData);
+      addBadge(payload);
     }
     resetForm();
     loadBadges();
@@ -76,6 +97,7 @@ export default function AdminBadges() {
       descriptionHtml: badge.descriptionHtml || '',
       images: badge.images || [],
       pdf: badge.pdf || null,
+      book: badge.book || null,
     });
     setEditingId(badge.id);
     setShowForm(true);
@@ -98,6 +120,7 @@ export default function AdminBadges() {
       descriptionHtml: '',
       images: [],
       pdf: null,
+      book: null,
     });
     setNewRequirement('');
     setShowForm(false);
@@ -123,6 +146,49 @@ export default function AdminBadges() {
     setFormData(prev => ({
       ...prev,
       requirements: prev.requirements.filter((_, i) => i !== index),
+    }));
+  };
+
+  const addBookPage = () => {
+    const trimmedTitle = bookPageDraft.title.trim();
+    if (!trimmedTitle) return;
+
+    const page = {
+      id: `page-${Date.now()}`,
+      type: bookPageDraft.type,
+      title: trimmedTitle,
+      content: bookPageDraft.content || '',
+      imageUrl: bookPageDraft.imageUrl || '',
+      pdfUrl: bookPageDraft.pdfUrl || '',
+      important: bookPageDraft.important,
+    };
+
+    setFormData((prev) => ({
+      ...prev,
+      book: {
+        title: `${prev.title || 'Badge'} Book`,
+        subtitle: `${prev.badgeType || 'Proficiency Badge'} • ${prev.category || 'General'}`,
+        pages: [...((prev.book?.pages) || []), page],
+      },
+    }));
+
+    setBookPageDraft({
+      title: '',
+      type: 'text',
+      content: '',
+      imageUrl: '',
+      pdfUrl: '',
+      important: false,
+    });
+  };
+
+  const removeBookPage = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      book: {
+        ...(prev.book || {}),
+        pages: (prev.book?.pages || []).filter((_, i) => i !== index),
+      },
     }));
   };
 
@@ -343,6 +409,105 @@ export default function AdminBadges() {
               />
             </div>
 
+            {/* Badge book builder */}
+            <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <div className="mb-4 flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-indigo-600" />
+                <h4 className="font-semibold text-slate-900">Badge Book Builder</h4>
+              </div>
+              <p className="mb-4 text-sm text-slate-600">Create a book-style experience for this badge. Add text pages, image pages, PDF pages, and mark important pages for the index.</p>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">Page title</label>
+                  <input
+                    type="text"
+                    value={bookPageDraft.title}
+                    onChange={(e) => setBookPageDraft((prev) => ({ ...prev, title: e.target.value }))}
+                    placeholder="Introduction"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">Page type</label>
+                  <select
+                    value={bookPageDraft.type}
+                    onChange={(e) => setBookPageDraft((prev) => ({ ...prev, type: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  >
+                    <option value="text">Text</option>
+                    <option value="image">Image</option>
+                    <option value="pdf">PDF</option>
+                  </select>
+                </div>
+              </div>
+
+              {bookPageDraft.type === 'image' && (
+                <div className="mt-4">
+                  <label className="mb-1 block text-sm font-medium text-slate-700">Image URL</label>
+                  <input
+                    type="text"
+                    value={bookPageDraft.imageUrl}
+                    onChange={(e) => setBookPageDraft((prev) => ({ ...prev, imageUrl: e.target.value }))}
+                    placeholder="https://..."
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  />
+                </div>
+              )}
+
+              {bookPageDraft.type === 'pdf' && (
+                <div className="mt-4">
+                  <label className="mb-1 block text-sm font-medium text-slate-700">PDF URL</label>
+                  <input
+                    type="text"
+                    value={bookPageDraft.pdfUrl}
+                    onChange={(e) => setBookPageDraft((prev) => ({ ...prev, pdfUrl: e.target.value }))}
+                    placeholder="https://.../file.pdf"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  />
+                </div>
+              )}
+
+              <div className="mt-4">
+                <label className="mb-1 block text-sm font-medium text-slate-700">Page content</label>
+                <textarea
+                  value={bookPageDraft.content}
+                  onChange={(e) => setBookPageDraft((prev) => ({ ...prev, content: e.target.value }))}
+                  rows={4}
+                  placeholder="Add rich content for this page. You can include HTML too."
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                />
+              </div>
+
+              <label className="mt-4 flex items-center gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={bookPageDraft.important}
+                  onChange={(e) => setBookPageDraft((prev) => ({ ...prev, important: e.target.checked }))}
+                />
+                Mark this page as important in the index
+              </label>
+
+              <button type="button" onClick={addBookPage} className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white transition hover:bg-indigo-700">
+                Add book page
+              </button>
+
+              {((formData.book?.pages) || []).length > 0 && (
+                <div className="mt-4 space-y-2">
+                  {(formData.book?.pages || []).map((page, index) => (
+                    <div key={page.id || `${page.title}-${index}`} className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        {page.important ? <Star className="h-4 w-4 text-amber-500" /> : page.type === 'image' ? <ImageIcon className="h-4 w-4 text-slate-500" /> : page.type === 'pdf' ? <FileText className="h-4 w-4 text-slate-500" /> : <BookOpen className="h-4 w-4 text-slate-500" />}
+                        <span className="text-sm font-semibold text-slate-700">{page.title}</span>
+                        <span className="text-xs uppercase text-slate-400">{page.type}</span>
+                      </div>
+                      <button type="button" onClick={() => removeBookPage(index)} className="text-sm font-semibold text-red-600">Remove</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <div className="flex gap-3 pt-2">
               <button

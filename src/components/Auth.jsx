@@ -191,8 +191,8 @@ export default function Auth() {
   // Initial loading state
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#14532d] via-[#16a34a] to-[#84cc16] flex items-center justify-center p-4">
-        <div className="text-emerald-50 text-lg animate-pulse">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center p-4" style={{background: 'linear-gradient(135deg, var(--color-header), var(--color-primary), var(--color-secondary))'}}>
+        <div className="text-white text-lg animate-pulse">Loading...</div>
       </div>
     );
   }
@@ -200,8 +200,8 @@ export default function Auth() {
   // Already logged in - show logged-in state with logout option
   if (user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#14532d] via-[#16a34a] to-[#84cc16] flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-emerald-950/90 border border-white/10 rounded-3xl shadow-2xl p-8 text-center text-white">
+      <div className="min-h-screen flex items-center justify-center p-4" style={{background: 'linear-gradient(135deg, var(--color-header), var(--color-primary), var(--color-secondary))'}}>
+        <div className="w-full max-w-md border border-white/10 rounded-3xl shadow-2xl p-8 text-center text-white" style={{backgroundColor: 'rgba(0,0,0,0.3)'}}>
           <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-600 rounded-full mb-4 shadow-lg shadow-emerald-500/30 text-3xl">
             &#9876;
           </div>
@@ -230,11 +230,11 @@ export default function Auth() {
 
   // Not logged in - show auth forms
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#14532d] via-[#16a34a] to-[#84cc16] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-emerald-950/90 border border-white/10 rounded-3xl shadow-2xl p-8 text-white">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{background: 'linear-gradient(135deg, var(--color-header), var(--color-primary), var(--color-secondary))'}}>
+      <div className="w-full max-w-md border border-white/10 rounded-3xl shadow-2xl p-8 text-white" style={{backgroundColor: 'rgba(0,0,0,0.3)'}}>
         {/* Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-600 rounded-full mb-4 shadow-lg shadow-emerald-500/30 text-3xl">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 shadow-lg text-3xl" style={{backgroundColor: 'var(--color-secondary)', color: 'white'}}>
             &#9876;
           </div>
           <h1 className="text-2xl font-bold">Amynabad Scouts</h1>

@@ -1,6 +1,6 @@
 ﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search } from 'lucide-react';
-import { getBadges } from '../utils/dataManager';
+import { getBadges, subscribeToData } from '../utils/dataManager';
 import AdGuard from './AdGuard';
 
 const SESSION_KEY = 'scouts_user_session';
@@ -57,6 +57,10 @@ export default function BadgeLibrary() {
   }, [isProficiencyOpen]);
 
   useEffect(() => {
+    const unsubscribe = subscribeToData(() => {
+      setBadges(getBadges());
+    });
+
     const handleStorage = (event) => {
       if (event.key === 'scouts_data') {
         setBadges(getBadges());
@@ -64,7 +68,10 @@ export default function BadgeLibrary() {
     };
 
     window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+    return () => {
+      unsubscribe();
+      window.removeEventListener('storage', handleStorage);
+    };
   }, []);
 
   useEffect(() => {

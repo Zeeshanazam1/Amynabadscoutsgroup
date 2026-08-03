@@ -142,7 +142,7 @@ export default function AdminWebsiteInfo() {
             <li>• Changes here will appear on your public website</li>
             <li>• The tagline appears in the website footer</li>
             <li>• Contact info should be accurate for visitors to reach you</li>
-            <li>• All changes are saved automatically to your browser's storage</li>
+            <li>• All changes are saved to your Firebase database and appear on the public site</li>
           </ul>
         </div>
 

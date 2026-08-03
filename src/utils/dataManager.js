@@ -30,6 +30,44 @@ const defaultData = {
   },
 };
 
+const buildDefaultBook = (badge) => {
+  const title = badge?.title || 'Badge Book';
+  const badgeType = badge?.badgeType || 'Proficiency Badge';
+  const category = badge?.category || 'General';
+  const requirements = Array.isArray(badge?.requirements) ? badge.requirements : [];
+
+  return {
+    title,
+    subtitle: `${badgeType} • ${category}`,
+    pages: [
+      {
+        id: `page-${Date.now()}-cover`,
+        type: 'text',
+        title: 'Welcome',
+        content: `This book introduces ${title}. Add rich text, images, or PDFs for each topic.`,
+        important: true,
+      },
+      {
+        id: `page-${Date.now()}-requirements`,
+        type: 'text',
+        title: 'Requirements',
+        content: requirements.length ? requirements.join('\n\n') : 'Add the badge requirements here.',
+        important: false,
+      },
+    ],
+  };
+};
+
+const ensureBadgeBook = (badge) => {
+  if (badge?.book && typeof badge.book === 'object') {
+    return {
+      ...badge.book,
+      pages: Array.isArray(badge.book.pages) ? badge.book.pages : [],
+    };
+  }
+  return buildDefaultBook(badge);
+};
+
 const ensureShopShape = (shop) => {
   if (!shop || typeof shop !== 'object') return { ...defaultData.shop };
   return {
@@ -71,6 +109,7 @@ export const addBadge = async (badge) => {
     descriptionHtml: badge.descriptionHtml || '',
     images: badge.images || [],
     pdf: badge.pdf || null,
+    book: ensureBadgeBook({ ...badge, title: badge.title, category: badge.category, requirements: badge.requirements || [], badgeType: badge.badgeType || 'Proficiency Badge' }),
   };
   await setCollectionDoc(COLLECTIONS.BADGES, id, newBadge);
   return newBadge;
@@ -79,7 +118,12 @@ export const addBadge = async (badge) => {
 export const updateBadge = async (badgeId, updatedBadge) => {
   const existing = getBadges().find((b) => b.id === badgeId);
   if (!existing) return null;
-  const merged = { ...existing, ...updatedBadge, id: badgeId };
+  const merged = {
+    ...existing,
+    ...updatedBadge,
+    id: badgeId,
+    book: ensureBadgeBook({ ...existing, ...updatedBadge, title: updatedBadge.title || existing.title, category: updatedBadge.category || existing.category, requirements: updatedBadge.requirements || existing.requirements || [], badgeType: updatedBadge.badgeType || existing.badgeType || 'Proficiency Badge' }),
+  };
   await setCollectionDoc(COLLECTIONS.BADGES, badgeId, merged);
   return merged;
 };
