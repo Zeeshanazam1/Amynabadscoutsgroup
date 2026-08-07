@@ -6,6 +6,7 @@ import {
   addResult,
   updateResult,
   deleteResult,
+  subscribeToData,
 } from '../utils/dataManager';
 
 export default function AdminResults() {
@@ -26,18 +27,18 @@ export default function AdminResults() {
   };
 
   useEffect(() => {
-    queueMicrotask(loadResults);
+    loadResults();
+    const unsub = subscribeToData(loadResults);
+    return () => unsub();
   }, []);
 
-
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (editingId) {
-      updateResult(editingId, formData);
+      await updateResult(editingId, formData);
       setEditingId(null);
     } else {
-      addResult(formData);
+      await addResult(formData);
     }
     resetForm();
     loadResults();
@@ -56,9 +57,9 @@ export default function AdminResults() {
     setShowForm(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (confirm('Are you sure you want to delete this result?')) {
-      deleteResult(id);
+      await deleteResult(id);
       loadResults();
     }
   };

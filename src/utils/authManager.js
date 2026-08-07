@@ -1,4 +1,4 @@
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { firebaseApp } from './firebaseConfig';
 import { isAdminEmail } from './adminConfig';
 
@@ -38,6 +38,35 @@ export const subscribeToAdminAuth = (fn) => {
   authListeners.add(fn);
   fn(currentAdmin);
   return () => authListeners.delete(fn);
+};
+
+export const loginWithGoogle = async () => {
+  try {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    if (!isAdminEmail(result.user?.email)) {
+      await signOut(auth);
+      currentAdmin = null;
+      sessionStorage.removeItem(SESSION_KEY);
+      return {
+        success: false,
+        error: `Access Denied: ${result.user?.email || 'This account'} is not an authorized admin account.`,
+      };
+    }
+    currentAdmin = {
+      authenticated: true,
+      loginTime: Date.now(),
+      email: result.user.email,
+      uid: result.user.uid,
+    };
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(currentAdmin));
+    return { success: true, email: result.user.email };
+  } catch (err) {
+    if (err?.code === 'auth/popup-closed-by-user') {
+      return { success: false, error: 'Sign-in popup was closed before completing.' };
+    }
+    return { success: false, error: err?.message || 'Google login failed. Please try again.' };
+  }
 };
 
 export const login = async (email, password) => {

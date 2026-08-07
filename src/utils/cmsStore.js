@@ -17,7 +17,7 @@ export const subscribe = (fn) => {
   return () => subscribers.delete(fn);
 };
 
-const notify = () => {
+export const notify = () => {
   subscribers.forEach((fn) => {
     try {
       fn();

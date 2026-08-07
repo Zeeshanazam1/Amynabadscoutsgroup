@@ -8,6 +8,7 @@ import {
   removeCollectionDoc,
   seedCmsFromJson,
   startCmsListeners,
+  notify,
 } from './cmsStore';
 
 export { subscribe as subscribeToData, startCmsListeners };
@@ -89,9 +90,37 @@ export const getWebsiteLeaderEmails = () => {
     : defaultData.websiteInfo.leaderEmails;
 };
 
+const LOCAL_STORAGE_BADGES_KEY = 'scouts_local_badges';
+
+const saveLocalBadges = (badges) => {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_BADGES_KEY, JSON.stringify(badges || []));
+  } catch (err) {
+    console.error('Failed to save badges to local storage:', err);
+  }
+};
+
+const getLocalBadges = () => {
+  try {
+    const data = localStorage.getItem(LOCAL_STORAGE_BADGES_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+};
+
 // Badges
 export const getBadges = () => {
-  return (getCache().badges || []).map((badge) => ({
+  const cacheBadges = getCache().badges || [];
+  const localBadges = getLocalBadges();
+
+  const map = new Map();
+  cacheBadges.forEach((b) => map.set(b.id, b));
+  localBadges.forEach((b) => {
+    if (!map.has(b.id)) map.set(b.id, b);
+  });
+
+  return Array.from(map.values()).map((badge) => ({
     ...badge,
     badgeType: badge.badgeType || 'Proficiency Badge',
   }));
@@ -111,25 +140,95 @@ export const addBadge = async (badge) => {
     pdf: badge.pdf || null,
     book: ensureBadgeBook({ ...badge, title: badge.title, category: badge.category, requirements: badge.requirements || [], badgeType: badge.badgeType || 'Proficiency Badge' }),
   };
-  await setCollectionDoc(COLLECTIONS.BADGES, id, newBadge);
-  return newBadge;
+  const cache = getCache();
+  if (Array.isArray(cache.badges)) {
+    const existingIndex = cache.badges.findIndex((b) => b.id === id);
+    if (existingIndex >= 0) {
+      cache.badges[existingIndex] = newBadge;
+    } else {
+      cache.badges.push(newBadge);
+    }
+  }
+  const localBadges = getLocalBadges();
+  const lIndex = localBadges.findIndex((b) => b.id === id);
+  if (lIndex >= 0) localBadges[lIndex] = newBadge;
+  else localBadges.push(newBadge);
+  saveLocalBadges(localBadges);
+
+  notify();
+
+  let firestoreSuccess = false;
+  let firestoreError = null;
+  try {
+    await setCollectionDoc(COLLECTIONS.BADGES, id, newBadge);
+    firestoreSuccess = true;
+  } catch (err) {
+    console.warn('Firestore setCollectionDoc warning for addBadge:', err);
+    firestoreError = err;
+  }
+  notify();
+  return { ...newBadge, firestoreSuccess, firestoreError };
 };
 
 export const updateBadge = async (badgeId, updatedBadge) => {
   const existing = getBadges().find((b) => b.id === badgeId);
-  if (!existing) return null;
   const merged = {
-    ...existing,
+    ...(existing || {}),
     ...updatedBadge,
     id: badgeId,
-    book: ensureBadgeBook({ ...existing, ...updatedBadge, title: updatedBadge.title || existing.title, category: updatedBadge.category || existing.category, requirements: updatedBadge.requirements || existing.requirements || [], badgeType: updatedBadge.badgeType || existing.badgeType || 'Proficiency Badge' }),
+    book: ensureBadgeBook({ ...existing, ...updatedBadge, title: updatedBadge.title || existing?.title, category: updatedBadge.category || existing?.category, requirements: updatedBadge.requirements || existing?.requirements || [], badgeType: updatedBadge.badgeType || existing?.badgeType || 'Proficiency Badge' }),
   };
-  await setCollectionDoc(COLLECTIONS.BADGES, badgeId, merged);
-  return merged;
+  const cache = getCache();
+  if (Array.isArray(cache.badges)) {
+    const idx = cache.badges.findIndex((b) => b.id === badgeId);
+    if (idx >= 0) {
+      cache.badges[idx] = merged;
+    } else {
+      cache.badges.push(merged);
+    }
+  }
+  const localBadges = getLocalBadges();
+  const lIndex = localBadges.findIndex((b) => b.id === badgeId);
+  if (lIndex >= 0) localBadges[lIndex] = merged;
+  else localBadges.push(merged);
+  saveLocalBadges(localBadges);
+
+  notify();
+
+  let firestoreSuccess = false;
+  let firestoreError = null;
+  try {
+    await setCollectionDoc(COLLECTIONS.BADGES, badgeId, merged);
+    firestoreSuccess = true;
+  } catch (err) {
+    console.warn('Firestore setCollectionDoc warning for updateBadge:', err);
+    firestoreError = err;
+  }
+  notify();
+  return { ...merged, firestoreSuccess, firestoreError };
 };
 
 export const deleteBadge = async (badgeId) => {
-  await removeCollectionDoc(COLLECTIONS.BADGES, badgeId);
+  const cache = getCache();
+  if (Array.isArray(cache.badges)) {
+    cache.badges = cache.badges.filter((b) => b.id !== badgeId);
+  }
+  const localBadges = getLocalBadges().filter((b) => b.id !== badgeId);
+  saveLocalBadges(localBadges);
+
+  notify();
+
+  let firestoreSuccess = false;
+  let firestoreError = null;
+  try {
+    await removeCollectionDoc(COLLECTIONS.BADGES, badgeId);
+    firestoreSuccess = true;
+  } catch (err) {
+    console.warn('Firestore removeCollectionDoc warning for deleteBadge:', err);
+    firestoreError = err;
+  }
+  notify();
+  return { firestoreSuccess, firestoreError };
 };
 
 // Events
@@ -146,19 +245,33 @@ export const addEvent = async (event) => {
     category: event.category,
     attendees: event.attendees,
   };
+  const cache = getCache();
+  if (Array.isArray(cache.events)) {
+    cache.events.unshift(newEvent);
+  }
   await setCollectionDoc(COLLECTIONS.EVENTS, id, newEvent);
   return newEvent;
 };
 
 export const updateEvent = async (eventId, updatedEvent) => {
   const existing = getEvents().find((e) => e.id === eventId);
-  if (!existing) return null;
-  const merged = { ...existing, ...updatedEvent, id: eventId };
+  const merged = { ...(existing || {}), ...updatedEvent, id: eventId };
+  const cache = getCache();
+  if (Array.isArray(cache.events)) {
+    const idx = cache.events.findIndex((e) => e.id === eventId);
+    if (idx >= 0) {
+      cache.events[idx] = merged;
+    }
+  }
   await setCollectionDoc(COLLECTIONS.EVENTS, eventId, merged);
   return merged;
 };
 
 export const deleteEvent = async (eventId) => {
+  const cache = getCache();
+  if (Array.isArray(cache.events)) {
+    cache.events = cache.events.filter((e) => e.id !== eventId);
+  }
   await removeCollectionDoc(COLLECTIONS.EVENTS, eventId);
 };
 
@@ -176,19 +289,33 @@ export const addResult = async (result) => {
     date: result.date,
     remarks: result.remarks || '',
   };
+  const cache = getCache();
+  if (Array.isArray(cache.results)) {
+    cache.results.unshift(newResult);
+  }
   await setCollectionDoc(COLLECTIONS.RESULTS, id, newResult);
   return newResult;
 };
 
 export const updateResult = async (resultId, updatedResult) => {
   const existing = getResults().find((r) => r.id === resultId);
-  if (!existing) return null;
-  const merged = { ...existing, ...updatedResult, id: resultId };
+  const merged = { ...(existing || {}), ...updatedResult, id: resultId };
+  const cache = getCache();
+  if (Array.isArray(cache.results)) {
+    const idx = cache.results.findIndex((r) => r.id === resultId);
+    if (idx >= 0) {
+      cache.results[idx] = merged;
+    }
+  }
   await setCollectionDoc(COLLECTIONS.RESULTS, resultId, merged);
   return merged;
 };
 
 export const deleteResult = async (resultId) => {
+  const cache = getCache();
+  if (Array.isArray(cache.results)) {
+    cache.results = cache.results.filter((r) => r.id !== resultId);
+  }
   await removeCollectionDoc(COLLECTIONS.RESULTS, resultId);
 };
 

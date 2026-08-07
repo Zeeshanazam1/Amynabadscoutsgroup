@@ -5,6 +5,7 @@ import {
   addEvent,
   updateEvent,
   deleteEvent,
+  subscribeToData,
 } from '../utils/dataManager';
 
 export default function AdminEvents() {
@@ -25,12 +26,12 @@ export default function AdminEvents() {
   };
 
   useEffect(() => {
-    queueMicrotask(loadEvents);
+    loadEvents();
+    const unsub = subscribeToData(loadEvents);
+    return () => unsub();
   }, []);
 
-
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.date || !formData.location) {
       alert('Please fill in all required fields');
@@ -38,10 +39,10 @@ export default function AdminEvents() {
     }
 
     if (editingId) {
-      updateEvent(editingId, formData);
+      await updateEvent(editingId, formData);
       setEditingId(null);
     } else {
-      addEvent(formData);
+      await addEvent(formData);
     }
     resetForm();
     loadEvents();
@@ -60,9 +61,9 @@ export default function AdminEvents() {
     setShowForm(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (confirm('Are you sure you want to delete this event?')) {
-      deleteEvent(id);
+      await deleteEvent(id);
       loadEvents();
     }
   };

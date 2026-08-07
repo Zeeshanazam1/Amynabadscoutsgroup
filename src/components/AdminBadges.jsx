@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Trash2, Edit2, Plus, X, BookOpen, FileText, Image as ImageIcon, Star } from 'lucide-react';
+import { Trash2, Edit2, Plus, X, BookOpen, FileText, Image as ImageIcon, Star, CheckCircle, AlertCircle } from 'lucide-react';
 import {
   getBadges,
   addBadge,
   updateBadge,
   deleteBadge,
+  subscribeToData,
 } from '../utils/dataManager';
 
 export default function AdminBadges() {
   const [badges, setBadges] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [statusMessage, setStatusMessage] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     section: '',
@@ -51,49 +53,112 @@ export default function AdminBadges() {
   };
 
   useEffect(() => {
-    queueMicrotask(loadBadges);
+    loadBadges();
+    const unsub = subscribeToData(loadBadges);
+    return () => unsub();
   }, []);
 
-
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.title || !formData.section || !formData.category) {
-      alert('Please fill in all required fields');
+    setStatusMessage(null);
+
+    const badgeTitle = (formData.title || '').trim();
+    const isProficiency = formData.badgeType === 'Proficiency Badge';
+    const category = isProficiency ? formData.category : 'Rank';
+
+    if (!badgeTitle || !formData.section) {
+      setStatusMessage({
+        type: 'error',
+        title: 'Validation Error',
+        message: 'Please fill in Badge Title and Section.',
+      });
       return;
     }
 
-    const book = {
-      title: `${formData.title} Book`,
-      subtitle: `${formData.badgeType || 'Proficiency Badge'} • ${formData.category}`,
-      pages: (formData.book?.pages || []).map((page) => ({
-        ...page,
-        content: page.content || '',
-      })),
-    };
-
-    const payload = {
-      ...formData,
-      book,
-    };
-
-    if (editingId) {
-      updateBadge(editingId, payload);
-      setEditingId(null);
-    } else {
-      addBadge(payload);
+    if (isProficiency && !formData.category) {
+      setStatusMessage({
+        type: 'error',
+        title: 'Validation Error',
+        message: 'Please select a Proficiency Badge Type (Spiritual, Mental, Social, or Physical).',
+      });
+      return;
     }
-    resetForm();
-    loadBadges();
+
+    try {
+      const subtitle = isProficiency
+        ? `${formData.badgeType || 'Proficiency Badge'} • ${category}`
+        : `Rank Badge • ${formData.section}`;
+
+      const book = {
+        title: `${badgeTitle} Book`,
+        subtitle,
+        pages: (formData.book?.pages || []).map((page) => ({
+          ...page,
+          content: page.content || '',
+        })),
+      };
+
+      const payload = {
+        ...formData,
+        title: badgeTitle,
+        category,
+        book,
+      };
+
+      if (editingId) {
+        const res = await updateBadge(editingId, payload);
+        if (res?.firestoreError) {
+          setStatusMessage({
+            type: 'success',
+            title: `Badge "${badgeTitle}" Updated`,
+            message: `Badge "${badgeTitle}" was updated! (Note for cloud sync: ${res.firestoreError.message || 'Please sign in with Google to sync with cloud Firestore'}).`,
+          });
+        } else {
+          setStatusMessage({
+            type: 'success',
+            title: 'Badge Updated & Synced',
+            message: `Badge "${badgeTitle}" was updated and saved to Firestore!`,
+          });
+        }
+        setEditingId(null);
+      } else {
+        const res = await addBadge(payload);
+        if (res?.firestoreError) {
+          setStatusMessage({
+            type: 'success',
+            title: `Badge "${badgeTitle}" Successfully Added`,
+            message: `Badge "${badgeTitle}" was successfully added to your site! (Note for cloud sync: ${res.firestoreError.message || 'Please sign in with Google to sync with cloud Firestore'}).`,
+          });
+        } else {
+          setStatusMessage({
+            type: 'success',
+            title: 'Badge Added & Synced',
+            message: `Badge "${badgeTitle}" was successfully added and saved to Firestore!`,
+          });
+        }
+      }
+      resetForm();
+      loadBadges();
+    } catch (err) {
+      console.error('Error saving badge:', err);
+      setStatusMessage({
+        type: 'error',
+        title: 'Save Error',
+        message: err?.message || 'Could not save badge.',
+      });
+    }
   };
 
   const handleEdit = (badge) => {
+    setStatusMessage(null);
+    const isRank = badge.badgeType === 'Rank Badge' || badge.category === 'Rank';
+    const badgeType = isRank ? 'Rank Badge' : 'Proficiency Badge';
     setFormData({
-      title: badge.title,
-      section: badge.section,
-      category: badge.category,
+      title: badge.title || '',
+      section: badge.section || '',
+      category: isRank ? 'Rank' : (badge.category || ''),
       requirements: [...(badge.requirements || [])],
-      badgeType: badge.badgeType || 'Proficiency Badge',
+      badgeType,
       descriptionHtml: badge.descriptionHtml || '',
       images: badge.images || [],
       pdf: badge.pdf || null,
@@ -103,10 +168,24 @@ export default function AdminBadges() {
     setShowForm(true);
   };
 
-  const handleDelete = (id) => {
-    if (confirm('Are you sure you want to delete this badge?')) {
-      deleteBadge(id);
-      loadBadges();
+  const handleDelete = async (id) => {
+    const badgeToDelete = badges.find((b) => b.id === id);
+    if (confirm(`Are you sure you want to delete "${badgeToDelete?.title || 'this badge'}"?`)) {
+      try {
+        await deleteBadge(id);
+        setStatusMessage({
+          type: 'success',
+          title: 'Badge Deleted',
+          message: `Badge "${badgeToDelete?.title || id}" was deleted successfully.`,
+        });
+        loadBadges();
+      } catch (err) {
+        setStatusMessage({
+          type: 'error',
+          title: 'Delete Failed',
+          message: err?.message || 'Could not delete badge.',
+        });
+      }
     }
   };
 
@@ -129,7 +208,17 @@ export default function AdminBadges() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      if (name === 'badgeType') {
+        if (value === 'Rank Badge') {
+          updated.category = 'Rank';
+        } else if (prev.category === 'Rank') {
+          updated.category = '';
+        }
+      }
+      return updated;
+    });
   };
 
   const addRequirement = () => {
@@ -199,6 +288,36 @@ export default function AdminBadges() {
         <p className="text-slate-600">Create, edit, or delete scout badges</p>
       </div>
 
+      {/* Status Notification Banner */}
+      {statusMessage && (
+        <div
+          className={`mb-6 p-4 rounded-xl border flex items-start justify-between gap-3 shadow-sm transition ${
+            statusMessage.type === 'success'
+              ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+              : 'bg-red-50 border-red-300 text-red-900'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            {statusMessage.type === 'success' ? (
+              <CheckCircle className="w-6 h-6 text-emerald-600 flex-shrink-0" />
+            ) : (
+              <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
+            )}
+            <div>
+              <p className="font-bold text-sm">{statusMessage.title}</p>
+              <p className="text-xs mt-0.5 opacity-90">{statusMessage.message}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setStatusMessage(null)}
+            className="text-slate-400 hover:text-slate-600 p-1"
+            title="Close notification"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Add Button */}
       {!showForm && (
         <button
@@ -244,6 +363,21 @@ export default function AdminBadges() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Badge Type *
+                </label>
+                <select
+                  name="badgeType"
+                  value={formData.badgeType}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Proficiency Badge">Proficiency Badge</option>
+                  <option value="Rank Badge">Rank Badge</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Section *
                 </label>
                 <select
@@ -259,26 +393,36 @@ export default function AdminBadges() {
                   <option value="Rover">Rover</option>
                 </select>
               </div>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Category *
+            {/* Proficiency Badge Type Selection (Only for Proficiency Badges) */}
+            {formData.badgeType === 'Proficiency Badge' ? (
+              <div className="bg-amber-50/50 border border-amber-200 rounded-lg p-4">
+                <label className="block text-sm font-semibold text-slate-800 mb-1">
+                  Proficiency Badge Type (Category) *
                 </label>
+                <p className="text-xs text-slate-500 mb-2">
+                  Select one of the 4 proficiency badge categories:
+                </p>
                 <select
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full md:w-1/2 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 >
-                  <option value="">Select category</option>
+                  <option value="">-- Select Proficiency Type --</option>
                   <option value="Spiritual">Spiritual</option>
                   <option value="Mental">Mental</option>
                   <option value="Social">Social</option>
                   <option value="Physical">Physical</option>
                 </select>
               </div>
-            </div>
+            ) : (
+              <div className="bg-slate-100 border border-slate-200 rounded-lg p-3 text-xs text-slate-600 flex items-center gap-2">
+                <span className="font-medium text-slate-700">Rank Badge selected:</span> Rank badges belong directly to a section and do not have proficiency categories.
+              </div>
+            )}
 
             {/* Requirements */}
             <div>
@@ -319,31 +463,17 @@ export default function AdminBadges() {
               </div>
             </div>
 
-            {/* Badge type */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Badge Type</label>
-                <select
-                  name="badgeType"
-                  value={formData.badgeType}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Rank Badge">Rank Badge</option>
-                  <option value="Proficiency Badge">Proficiency Badge</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">PDF URL</label>
-                <input
-                  type="text"
-                  name="pdf"
-                  value={formData.pdf || ''}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, pdf: e.target.value || null }))}
-                  placeholder="https://.../file.pdf"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+            {/* PDF URL */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">PDF URL</label>
+              <input
+                type="text"
+                name="pdf"
+                value={formData.pdf || ''}
+                onChange={(e) => setFormData((prev) => ({ ...prev, pdf: e.target.value || null }))}
+                placeholder="https://.../file.pdf"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
 
             {/* Images */}
